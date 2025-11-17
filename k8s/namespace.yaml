@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chefgpt
+  labels:
+    name: chefgpt
+    environment: production
