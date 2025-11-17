@@ -1,0 +1,153 @@
+openapi: 3.0.3
+info:
+  title: ChefGPT API
+  version: 1.0.0
+servers:
+  - url: https://api.chefgpt.app
+paths:
+  /auth/signup:
+    post:
+      summary: User registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201': { description: User created }
+
+  /auth/login:
+    post:
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200': { description: Login success }
+
+  /recipes:
+    post:
+      summary: Create a new recipe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreate'
+      responses:
+        '201': { description: Recipe created }
+    get:
+      summary: List recipes
+      parameters:
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200': { description: List of recipes }
+
+  /recipes/{id}:
+    get:
+      summary: Get recipe details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200': { description: Recipe details }
+    delete:
+      summary: Delete a recipe
+      security:
+        - bearerAuth: []
+      responses:
+        '204': { description: Recipe deleted }
+
+  /ingredients/recognize:
+    post:
+      summary: Recognize ingredients from image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200': { description: Recognition result }
+
+  /mealplan/generate:
+    post:
+      summary: Auto-generate meal plan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanRequest'
+      responses:
+        '200': { description: Generated meal plan }
+
+  /shopping-list:
+    post:
+      summary: Create shopping list
+      security:
+        - bearerAuth: []
+      responses:
+        '201': { description: Created }
+    get:
+      summary: List shopping lists
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: List returned }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RecipeCreate:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        ingredients:
+          type: array
+          items:
+            type: object
+            properties:
+              ingredient_id: { type: integer }
+              quantity: { type: number }
+              unit: { type: string }
+    MealPlanRequest:
+      type: object
+      properties:
+        goal: { type: string }
+        calories_target: { type: integer }
+        duration_days: { type: integer }
