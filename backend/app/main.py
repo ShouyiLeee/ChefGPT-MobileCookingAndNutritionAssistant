@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.database import create_db_and_tables
-from app.routers import auth, recipes, chat, vision, meal_plan, social
+from app.routers import auth, recipes, chat, vision, meal_plan, social, recipes_search
 
 
 @asynccontextmanager
@@ -41,6 +41,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth.router)
 app.include_router(recipes.router)
+app.include_router(recipes_search.router)
 app.include_router(chat.router)
 app.include_router(vision.router)
 app.include_router(meal_plan.router)
