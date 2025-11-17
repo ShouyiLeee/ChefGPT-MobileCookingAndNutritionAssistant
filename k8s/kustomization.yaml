@@ -1,0 +1,29 @@
+# Kustomization file for easier deployment
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: chefgpt
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secret.yaml
+  - postgres-pvc.yaml
+  - postgres-deployment.yaml
+  - redis-deployment.yaml
+  - backend-deployment.yaml
+  - celery-worker-deployment.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: chefgpt
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Image transformers (can be used to update images)
+images:
+  - name: your-docker-registry/chefgpt-backend
+    newName: your-docker-registry/chefgpt-backend
+    newTag: latest

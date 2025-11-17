@@ -4,56 +4,82 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-.venv/
-ENV/
+*.egg-info/
+dist/
+build/
+*.egg
 .pytest_cache/
+.coverage
+htmlcov/
+.tox/
 .mypy_cache/
+.dmypy.json
+dmyp.json
 .ruff_cache/
 
-# IDEs
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.DS_Store
+Thumbs.db
 
-# Environment
+# Environment files
 .env
-.env.local
+.env.*
+!.env.example
 
 # Database
 *.db
 *.sqlite
+*.sqlite3
 
 # Logs
 *.log
+logs/
 
-# OS
-.DS_Store
-Thumbs.db
+# Uploads (will be mounted as volume)
+uploads/*
+!uploads/.gitkeep
+
+# Docker
+docker-compose.override.yml
+.dockerignore
 
 # Git
 .git/
 .gitignore
+.gitattributes
 
 # Documentation
-README.md
+*.md
+!README.md
 docs/
 
 # Tests
 tests/
 test_*.py
+*_test.py
 
 # CI/CD
 .github/
 .gitlab-ci.yml
+.circleci/
 
-# Docker
-Dockerfile
-docker-compose*.yml
-.dockerignore
+# Temporary files
+tmp/
+temp/
+*.tmp
 
-# Uploads (will be mounted as volume)
-uploads/
+# Backups
+backups/
+*.bak
+*.backup

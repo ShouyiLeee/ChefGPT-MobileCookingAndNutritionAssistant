@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: chefgpt
+  labels:
+    app: celery-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      containers:
+      - name: celery-worker
+        image: your-docker-registry/chefgpt-backend:latest  # Same image as backend
+        imagePullPolicy: Always
+        command: ["celery", "-A", "app.tasks", "worker", "--loglevel=info", "--concurrency=4"]
+        envFrom:
+        - configMapRef:
+            name: chefgpt-backend-config
+        - secretRef:
+            name: chefgpt-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+  namespace: chefgpt
+  labels:
+    app: celery-beat
+spec:
+  replicas: 1  # Only 1 beat scheduler
+  selector:
+    matchLabels:
+      app: celery-beat
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+    spec:
+      containers:
+      - name: celery-beat
+        image: your-docker-registry/chefgpt-backend:latest
+        imagePullPolicy: Always
+        command: ["celery", "-A", "app.tasks", "beat", "--loglevel=info"]
+        envFrom:
+        - configMapRef:
+            name: chefgpt-backend-config
+        - secretRef:
+            name: chefgpt-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
