@@ -161,6 +161,16 @@ jobs:
         working-directory: ./mobile
         run: flutter pub get
 
+      - name: Create platform directories
+        working-directory: ./mobile
+        run: |
+          if [ ! -d "android" ] || [ ! -d "ios" ]; then
+            echo "Creating missing platform directories..."
+            flutter create --platforms=android,ios .
+          else
+            echo "Platform directories already exist"
+          fi
+
       - name: Analyze code
         working-directory: ./mobile
         run: flutter analyze

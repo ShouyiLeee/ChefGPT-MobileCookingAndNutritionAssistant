@@ -32,6 +32,14 @@ jobs:
         working-directory: ./mobile
         run: flutter pub get
 
+      - name: Create Android platform
+        working-directory: ./mobile
+        run: |
+          if [ ! -d "android" ]; then
+            echo "Creating Android platform..."
+            flutter create --platforms=android .
+          fi
+
       - name: Build APK
         working-directory: ./mobile
         run: flutter build apk --release
@@ -79,6 +87,14 @@ jobs:
       - name: Install dependencies
         working-directory: ./mobile
         run: flutter pub get
+
+      - name: Create iOS platform
+        working-directory: ./mobile
+        run: |
+          if [ ! -d "ios" ]; then
+            echo "Creating iOS platform..."
+            flutter create --platforms=ios .
+          fi
 
       - name: Install CocoaPods
         run: |
