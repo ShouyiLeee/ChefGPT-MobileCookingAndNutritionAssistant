@@ -1,231 +1,215 @@
-# CLAUDE.md — ChefGPT System Specification
+# CLAUDE.md — ChefGPT MVP Specification
 
-This document provides a complete specification and technical understanding of the **ChefGPT** mobile application so that Claude can assist in building the full project (frontend + backend + AI agents + data pipelines).
+This document is the single source of truth for building **ChefGPT MVP**.
+Core LLM: **Gemini 2.5 Flash** (free tier via Google AI Studio). Social/Grocery features use mock data.
 
 ---
 
 # 1. Summary
-ChefGPT is a mobile AI-powered cooking and nutrition assistant. It integrates:
-- **LLM (GPT-4.1 or Claude)** for reasoning, recipe generation, nutrition advice.
-- **Vision models** for ingredient detection.
-- **RAG** for retrieving structured recipe + nutrition data.
-- **Mobile app** (Flutter or React Native) as core interface.
-- **Backend** (FastAPI) for business logic.
-- **Supabase** or **Firebase** for auth, storage, realtime features.
 
-Claude should understand this entire system to generate code components, API handlers, data schemas, RAG pipelines, UI, and architecture.
+ChefGPT MVP is a mobile AI cooking assistant focused on two real AI workflows:
+- **Ingredient → Recipe generation** (text + photo input)
+- **Meal planning + nutrition analysis**
+
+Everything else (social feed, grocery shopping) is mocked for demo purposes.
 
 ---
 
-# 2. Core Features
+# 2. Features & Implementation Status
 
-## 2.1 AI Chatbot (Main Interface)
-The chatbot performs:
-- Recipe suggestions from **ingredients text** input.
-- Recipe suggestions from **ingredient photos**.
-- Suggestions from **mood / constraints** (“món ít calo”, “món nước”, “món không cay”).
-- Nutrition advice (“Tôi có nên bỏ bữa sáng?”, “Trứng + cà chua OK không?”).
-- Transform recipes (“phiên bản healthy”, “phiên bản rẻ hơn”).
+## 2.1 AI Recipe Generation ✅ (real)
+- User nhập nguyên liệu bằng text → Gemini 2.5 Flash gợi ý món.
+- User chụp ảnh nguyên liệu → Gemini Vision nhận diện → gợi ý món.
+- Trả về hướng dẫn nấu từng bước.
+- Lọc theo sở thích: không cay, chay, ít dầu, v.v.
 
-Backend: `/chat/query` → LLM + tools.
+Endpoint: `POST /recipes/suggest`
 
-## 2.2 Recipe Engine
-- Parse ingredients.
-- Query RAG recipes.
-- Match available ingredients.
-- Show missing ingredients.
-- Provide step-by-step cooking instructions.
-- Optional: generate or fetch demo videos.
+## 2.2 Meal Plan + Nutrition ✅ (real)
+- Tạo thực đơn theo tuần dựa trên mục tiêu (giảm cân, tăng cơ, eat clean...).
+- Gemini 2.5 Flash sinh thực đơn và ước tính dinh dưỡng (calories, protein, carb, fat).
 
-## 2.3 Vision Ingredient Recognition
-- Upload image → detect ingredients.
-- Model option:
-  - LLM Vision
-  - YOLOv8 custom food model
+Endpoint: `POST /mealplan/generate`
 
-Endpoint: `/ingredients/recognize`.
+## 2.3 Grocery List 🟡 (mock)
+- Trả về danh sách mua sắm tĩnh từ mock data.
+- Không gọi LLM, không tích hợp API siêu thị.
 
-## 2.4 Meal Plan Generator
-- Weekly/daily plans.
-- Calories + macro estimation.
-- Shopping list auto-generation.
+Endpoint: `GET /shopping-list/mock`
 
-Endpoint: `/mealplan/generate`.
+## 2.4 Social Feed 🟡 (mock)
+- Feed bài đăng, like, comment từ hardcoded JSON.
+- Không có realtime, không có user-generated content thật.
 
-## 2.5 Social Feed
-Users can:
-- Post recipes.
-- Upload images/videos.
-- Like/comment/bookmark.
-
-Real-time updates via Supabase Realtime.
-
-## 2.6 Shopping List
-- AI-generated lists.
-- Manual creation.
-- Integration with supermarket APIs (future).
+Endpoint: `GET /posts/mock`
 
 ---
 
-# 3. Tech Stack
+# 3. Tech Stack (MVP)
 
-## Frontend
-- **Flutter (recommended)**
-  - State: Riverpod / Bloc
-  - Networking: Dio
-  - Image: Image Picker
-
-Alternative: **React Native**.
+## Mobile
+- **Flutter** — cross-platform, 1 codebase
+- State: **Riverpod**
+- Networking: **Dio**
+- Image: **image_picker**
 
 ## Backend
 - **FastAPI** (Python)
-  - Pydantic models
-  - PostgreSQL ORM (SQLModel / SQLAlchemy)
-  - Task queue optional: Celery / RQ
-
-## Database
-- **PostgreSQL + pgvector** for embeddings
-- **Supabase Auth**
-- **Supabase Storage**
+- **SQLite** (local dev) → PostgreSQL khi scale
+- **Supabase Auth** — xác thực người dùng
 
 ## AI Layer
-- GPT-4.1 (OpenAI)
-- Claude 3.5 Sonnet for generation/analysis
-- Vision models
-- Embeddings (OpenAI/text-embedding-3-large)
+- **Gemini 2.5 Flash** via `google-generativeai` SDK (free tier)
+- Prompt engineering trực tiếp — không cần RAG, không cần vector DB ở MVP
+- Vision: Gemini multimodal (nhận diện ảnh nguyên liệu, không cần CV model riêng)
 
-## RAG
-- Store recipes, nutrition data, ingredient knowledge.
-- Vector search → retrieve context for LLM.
-
----
-
-# 4. System Architecture (Summary)
-- Mobile App → FastAPI backend.
-- Backend communicates with:
-  - Auth (Supabase)
-  - DB (PostgreSQL)
-  - Storage (Supabase)
-  - LLMs (GPT, Claude)
-  - Vision Models
-  - RAG vector store
+## Infrastructure
+- **Docker Compose** (local dev)
+- Deploy: **Railway** hoặc **Render** (free tier)
 
 ---
 
-# 5. Directory Structure (Recommended)
+# 4. Architecture (MVP)
+
+```
+Flutter App
+    │
+    ▼
+FastAPI Backend
+    ├── POST /recipes/suggest     → GeminiService (text + vision)
+    ├── POST /mealplan/generate   → GeminiService
+    ├── GET  /shopping-list/mock  → MockData
+    └── GET  /posts/mock          → MockData
+    │
+    ▼
+Supabase Auth + SQLite (lưu user history)
+```
+
+**Nguyên tắc**: Mọi AI call đều đi qua `GeminiService` để dễ swap model sau.
+
+---
+
+# 5. Directory Structure
+
 ```
 chefgpt/
-├── mobile/ (Flutter or RN)
+├── mobile/                  # Flutter app
+│   ├── lib/
+│   │   ├── features/
+│   │   │   ├── recipe/
+│   │   │   ├── meal_plan/
+│   │   │   ├── grocery/     # mock
+│   │   │   └── social/      # mock
+│   │   ├── services/
+│   │   └── main.dart
 ├── backend/
 │   ├── app/
 │   │   ├── routers/
-│   │   ├── models/
-│   │   ├── schemas/
+│   │   │   ├── recipes.py
+│   │   │   ├── mealplan.py
+│   │   │   ├── shopping.py  # mock
+│   │   │   └── posts.py     # mock
 │   │   ├── services/
-│   │   ├── llm/
-│   │   ├── rag/
-│   │   └── utils/
-│   ├── scripts/
+│   │   │   └── gemini.py    # GeminiService (single AI entry point)
+│   │   ├── models/
+│   │   ├── mocks/           # JSON mock data
+│   │   └── main.py
 │   └── tests/
-├── data/
-├── docs/
-└── infra/
+└── docs/
 ```
 
 ---
 
 # 6. API Specification
-A full OpenAPI file is available in `chefgpt_openapi.yaml`. Claude can use it to generate:
-- FastAPI routers
-- Pydantic request/response models
-- Frontend service classes
 
-Main endpoints:
-- `/auth/*`
-- `/recipes/*`
-- `/ingredients/recognize`
-- `/chat/query`
-- `/mealplan/generate`
-- `/shopping-list/*`
-- `/posts/*`
-
----
-
-# 7. Database (ERD)
-Key tables:
-- `users`, `profiles`
-- `recipes`, `ingredients`, `recipe_ingredients`
-- `posts`, `comments`, `likes`
-- `meal_plans`, `meal_items`
-- `shopping_lists`, `shopping_items`
-- `nutrition_db`
-- `embeddings`
-
-Refer to ERD image provided earlier.
-
----
-
-# 8. LLM Agent Logic
-Claude should implement tools for:
-
-### 8.1 Tools
-- `search_recipe`
-- `match_ingredients`
-- `generate_meal_plan`
-- `estimate_nutrition`
-- `vision_recognize`
-
-### 8.2 Agent Workflow
-Example for recipe suggestion:
+### POST /recipes/suggest
+```json
+Request:  { "ingredients": ["cà chua", "trứng"], "filters": ["chay"] }
+          or multipart/form-data with image
+Response: { "dishes": [...], "instructions": {...} }
 ```
-User input → LLM parse → detect mode
-IF ingredients → ingredient matcher → RAG search → LLM re-rank
-IF dish name → direct fetch → enrich
-IF preference request → classify → filter recipes → suggest
+
+### POST /mealplan/generate
+```json
+Request:  { "goal": "eat_clean", "days": 7, "calories_target": 1800 }
+Response: { "plan": [...], "nutrition_summary": {...} }
+```
+
+### GET /shopping-list/mock
+```json
+Response: { "items": [...] }  // hardcoded
+```
+
+### GET /posts/mock
+```json
+Response: { "posts": [...] }  // hardcoded
 ```
 
 ---
 
-# 9. Roadmap (Dev-focused)
-## Phase 1 — Core (2 months)
-- Auth
-- Chatbot base
-- Ingredient recognition
-- Recipe engine MVP
-- Shopping list MVP
-- Backend + DB setup
+# 7. Database (MVP — minimal)
 
-## Phase 2 — Productization (3–4 months)
-- Social feed
-- Meal plan
-- Nutrition system
-- Profile personalization
-- RAG v1
+```
+users           — id, email, created_at
+profiles        — user_id, goal, dietary_prefs
+recipe_history  — user_id, recipe_name, ingredients, created_at
+meal_plans      — user_id, plan_json, created_at
+```
 
-## Phase 3 — Advanced AI (6 months)
-- Mood-based cooking
-- Nutrition optimization algorithms
-- Budget-based cooking
-- Voice cooking assistant
+Không có bảng `posts`, `embeddings`, `nutrition_db` ở MVP.
+
+---
+
+# 8. GeminiService — Core AI Logic
+
+```python
+# backend/app/services/gemini.py
+import google.generativeai as genai
+
+class GeminiService:
+    def __init__(self):
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
+
+    async def suggest_recipes(self, ingredients: list[str], filters: list[str]) -> dict: ...
+    async def recognize_ingredients(self, image_bytes: bytes) -> list[str]: ...
+    async def generate_meal_plan(self, goal: str, days: int, calories: int) -> dict: ...
+```
+
+---
+
+# 9. Roadmap
+
+## Phase 1 — MVP (hiện tại)
+- [x] Flutter app skeleton + navigation
+- [x] Supabase Auth (login/register)
+- [x] GeminiService (text recipe + vision)
+- [x] Recipe suggestion screen
+- [x] Meal plan screen
+- [x] Mock social feed + mock grocery list
+
+## Phase 2 — Social & Grocery (real)
+- Supabase Realtime cho social feed
+- Shopping list tự sinh từ thực đơn
+
+## Phase 3 — AI Automation
+- Tích hợp API siêu thị (Bách Hóa Xanh, Winmart...)
+- Agent cá nhân hoá theo sức khỏe
+- Nâng cấp model nếu cần (Gemini Pro / Claude)
 
 ---
 
 # 10. Instructions for Claude
-Claude should now:
-1. Be able to generate **full backend code** based on FastAPI.
-2. Generate **Flutter app structure + screens**.
-3. Create **RAG pipeline** (embedding + DB schema + query code).
-4. Implement **Vision pipeline**.
-5. Assist in optimizing architecture.
-6. Create deployment configs (Docker, Supabase configs).
-7. Follow this document as the single source of truth.
 
-If the user requests code, Claude should:
-- follow the architecture above
-- generate idiomatic, production-quality code
-- ensure consistency with APIs, DB models, and flows defined here.
+Khi generate code cho project này, Claude phải:
+1. Dùng **Gemini 2.5 Flash** làm LLM duy nhất — không dùng GPT hay Claude API.
+2. Mọi AI call đi qua `GeminiService` — không gọi trực tiếp ở router.
+3. Mock data đặt trong `/mocks/*.json` — tách biệt hoàn toàn khỏi business logic.
+4. **Không implement** RAG, pgvector, Celery, Kubernetes ở giai đoạn này.
+5. Code FastAPI phải có Pydantic models cho tất cả request/response.
+6. Flutter dùng Riverpod cho state management.
+7. Secrets trong `.env`, không hardcode API key.
 
 ---
 
 # END
-
