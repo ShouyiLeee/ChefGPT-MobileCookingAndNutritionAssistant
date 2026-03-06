@@ -13,10 +13,10 @@ import '../../features/profile/presentation/profile_screen.dart';
 import '../navigation/main_navigation.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final notifier = ValueNotifier<bool>(false);
+  final notifier = ValueNotifier<int>(0);
 
   ref.listen<AuthState>(authProvider, (_, next) {
-    notifier.value = next.isAuthenticated;
+    notifier.value++;
   });
 
   final router = GoRouter(
