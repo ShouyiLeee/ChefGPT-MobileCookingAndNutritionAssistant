@@ -5,8 +5,6 @@ from typing import List, Optional
 
 
 class PostCreate(BaseModel):
-    """Post creation schema."""
-
     content: str = Field(..., min_length=1, max_length=5000)
     image_urls: Optional[List[str]] = None
     video_url: Optional[str] = None
@@ -14,8 +12,6 @@ class PostCreate(BaseModel):
 
 
 class PostResponse(BaseModel):
-    """Post response schema."""
-
     id: int
     author_id: str
     author_name: Optional[str] = None
@@ -29,20 +25,15 @@ class PostResponse(BaseModel):
     is_liked_by_me: bool = False
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class CommentCreate(BaseModel):
-    """Comment creation schema."""
-
     content: str = Field(..., min_length=1, max_length=1000)
     parent_id: Optional[int] = None
 
 
 class CommentResponse(BaseModel):
-    """Comment response schema."""
-
     id: int
     user_id: str
     user_name: Optional[str] = None
@@ -52,5 +43,4 @@ class CommentResponse(BaseModel):
     parent_id: Optional[int] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

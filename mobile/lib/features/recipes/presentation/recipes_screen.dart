@@ -45,8 +45,7 @@ class _RecipesNotifier extends StateNotifier<_RecipesState> {
           .toList();
       state = state.copyWith(dishes: dishes, isLoading: false);
     } catch (e) {
-      state = state.copyWith(
-          isLoading: false, error: 'Loi ket noi: ${e.toString()}');
+      state = state.copyWith(isLoading: false, error: ApiService.parseError(e));
     }
   }
 
@@ -65,8 +64,7 @@ class _RecipesNotifier extends StateNotifier<_RecipesState> {
       }
       await suggestFromText(ingredients, []);
     } catch (e) {
-      state = state.copyWith(
-          isLoading: false, error: 'Loi xu ly anh: ${e.toString()}');
+      state = state.copyWith(isLoading: false, error: ApiService.parseError(e));
     }
   }
 

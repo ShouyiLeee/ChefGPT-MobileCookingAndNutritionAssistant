@@ -52,7 +52,7 @@ class _MealPlanNotifier extends StateNotifier<_MealPlanState> {
       state = state.copyWith(plan: plan, summary: summary, isLoading: false);
     } catch (e) {
       state = state.copyWith(
-          isLoading: false, error: 'Loi ket noi: ${e.toString()}');
+          isLoading: false, error: ApiService.parseError(e));
     }
   }
 

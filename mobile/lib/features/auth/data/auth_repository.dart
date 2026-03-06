@@ -50,7 +50,7 @@ class AuthRepository {
 
       return Success(user);
     } catch (e) {
-      return Failure(message: 'Login failed: ${e.toString()}');
+      return Failure(message: ApiService.parseError(e));
     }
   }
 
@@ -76,7 +76,7 @@ class AuthRepository {
 
       return Success(user);
     } catch (e) {
-      return Failure(message: 'Signup failed: ${e.toString()}');
+      return Failure(message: ApiService.parseError(e));
     }
   }
 
@@ -86,7 +86,7 @@ class AuthRepository {
       await _secureStorage.deleteAll();
       return const Success(null);
     } catch (e) {
-      return Failure(message: 'Logout failed: ${e.toString()}');
+      return Failure(message: ApiService.parseError(e));
     }
   }
 

@@ -1,7 +1,6 @@
 """GeminiService — single entry point for all AI calls via Gemini 2.5 Flash."""
 import json
 import re
-from typing import Optional
 
 from google import genai
 from google.genai import types
@@ -9,6 +8,16 @@ from google.genai import types
 from app.core.config import settings
 
 _MODEL = "gemini-2.5-flash"
+
+# Disable thinking for fast vision/simple tasks (no reasoning needed)
+_NO_THINK = types.GenerateContentConfig(
+    thinking_config=types.ThinkingConfig(thinking_budget=0)
+)
+
+# Minimal thinking for recipe/meal plan generation
+_FAST_THINK = types.GenerateContentConfig(
+    thinking_config=types.ThinkingConfig(thinking_budget=512)
+)
 
 
 class GeminiService:
@@ -52,15 +61,17 @@ Trả về JSON với cấu trúc sau (không có text ngoài JSON):
     }}
   ]
 }}"""
-        response = self.client.models.generate_content(model=_MODEL, contents=prompt)
+        response = await self.client.aio.models.generate_content(
+            model=_MODEL, contents=prompt, config=_FAST_THINK
+        )
         return self._parse_json(response.text)
 
     async def recognize_ingredients(self, image_bytes: bytes) -> dict:
-        """Recognize food ingredients from an image."""
-        prompt = "Nhìn vào ảnh và liệt kê tất cả nguyên liệu thực phẩm bạn nhìn thấy. Trả về JSON (không có text ngoài JSON): {\"ingredients\": [\"nguyên liệu 1\", \"nguyên liệu 2\"]}"
+        """Recognize food ingredients from an image (thinking disabled for speed)."""
+        prompt = 'Nhìn vào ảnh và liệt kê tất cả nguyên liệu thực phẩm bạn nhìn thấy. Trả về JSON (không có text ngoài JSON): {"ingredients": ["nguyên liệu 1", "nguyên liệu 2"]}'
         image_part = types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
-        response = self.client.models.generate_content(
-            model=_MODEL, contents=[prompt, image_part]
+        response = await self.client.aio.models.generate_content(
+            model=_MODEL, contents=[prompt, image_part], config=_NO_THINK
         )
         return self._parse_json(response.text)
 

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
+import '../../features/auth/domain/auth_state.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/recipes/presentation/recipes_screen.dart';
 import '../../features/meal_plan/presentation/meal_plan_screen.dart';
@@ -10,11 +12,29 @@ import '../../features/social/presentation/social_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../navigation/main_navigation.dart';
 
-class AppRouter {
-  static final GoRouter router = GoRouter(
-    initialLocation: '/home',
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final notifier = ValueNotifier<bool>(false);
+
+  ref.listen<AuthState>(authProvider, (_, next) {
+    notifier.value = next.isAuthenticated;
+  });
+
+  final router = GoRouter(
+    initialLocation: '/login',
+    refreshListenable: notifier,
+    redirect: (context, state) {
+      final authState = ProviderScope.containerOf(context).read(authProvider);
+      if (authState.isLoading) return null;
+
+      final isLoggedIn = authState.isAuthenticated;
+      final path = state.uri.path;
+      final isOnAuthPage = path == '/login' || path == '/signup';
+
+      if (!isLoggedIn && !isOnAuthPage) return '/login';
+      if (isLoggedIn && isOnAuthPage) return '/home';
+      return null;
+    },
     routes: [
-      // Auth
       GoRoute(
         path: '/login',
         name: 'login',
@@ -25,8 +45,6 @@ class AppRouter {
         name: 'signup',
         builder: (_, __) => const SignupScreen(),
       ),
-
-      // Main shell with bottom nav
       ShellRoute(
         builder: (_, __, child) => MainNavigation(child: child),
         routes: [
@@ -70,7 +88,14 @@ class AppRouter {
       ),
     ],
     errorBuilder: (_, state) => Scaffold(
-      body: Center(child: Text('Page not found: ${state.uri}')),
+      body: Center(child: Text('Page not found: \${state.uri}')),
     ),
   );
-}
+
+  ref.onDispose(() {
+    notifier.dispose();
+    router.dispose();
+  });
+
+  return router;
+});

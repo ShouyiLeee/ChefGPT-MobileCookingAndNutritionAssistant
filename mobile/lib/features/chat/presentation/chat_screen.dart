@@ -52,7 +52,7 @@ class _ChatNotifier extends StateNotifier<List<ChatMessage>> {
       state = state
           .map((m) => m.id == loadingId
               ? m.copyWith(
-                  message: 'Loi ket noi. Vui long thu lai.', isLoading: false)
+                  message: ApiService.parseError(e), isLoading: false)
               : m)
           .toList();
     }
