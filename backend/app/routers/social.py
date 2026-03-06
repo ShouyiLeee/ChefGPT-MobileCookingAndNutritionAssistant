@@ -1,192 +1,229 @@
-"""Social router for posts and community features."""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+"""Social router — real social feed with posts, likes, and comments."""
+import json
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from typing import List
+
 from app.core.database import get_session
 from app.core.security import get_current_user_id
-from app.schemas.social import PostCreate, PostResponse, CommentCreate, CommentResponse
 from app.models.social import Post, Comment, Like
+from app.models.user import Profile
+from app.schemas.social import PostCreate, PostResponse, CommentCreate, CommentResponse
 
 router = APIRouter(prefix="/posts", tags=["Social"])
 
 
-@router.get("", response_model=List[PostResponse])
-async def get_posts(
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
-    session: AsyncSession = Depends(get_session),
-) -> List[PostResponse]:
-    """Get public posts."""
-    skip = (page - 1) * limit
-
-    statement = (
-        select(Post)
-        .where(Post.is_public == True)
-        .order_by(Post.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-    )
-
-    result = await session.execute(statement)
-    posts = result.scalars().all()
-
-    # TODO: Add author info and is_liked_by_me logic
-    return [
-        PostResponse(
-            id=post.id,
-            author_id=post.author_id,
-            content=post.content,
-            image_urls=post.image_urls.split(",") if post.image_urls else None,
-            video_url=post.video_url,
-            recipe_id=post.recipe_id,
-            like_count=post.like_count,
-            comment_count=post.comment_count,
-            is_liked_by_me=False,  # TODO: Check if current user liked
-            created_at=post.created_at,
-        )
-        for post in posts
-    ]
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 
-@router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
-async def create_post(
-    post_data: PostCreate,
-    user_id: str = Depends(get_current_user_id),
-    session: AsyncSession = Depends(get_session),
+async def _build_post_response(
+    post: Post, current_user_id: str, session: AsyncSession
 ) -> PostResponse:
-    """Create a new post."""
-    image_urls_str = ",".join(post_data.image_urls) if post_data.image_urls else None
+    """Build PostResponse with author info and liked-by-me status."""
+    profile_q = select(Profile).where(Profile.user_id == post.author_id)
+    profile = (await session.execute(profile_q)).scalar_one_or_none()
 
-    post = Post(
-        author_id=user_id,
-        content=post_data.content,
-        image_urls=image_urls_str,
-        video_url=post_data.video_url,
-        recipe_id=post_data.recipe_id,
+    like_q = select(Like).where(
+        Like.user_id == current_user_id, Like.post_id == post.id
     )
+    is_liked = (await session.execute(like_q)).scalar_one_or_none() is not None
 
-    session.add(post)
-    await session.commit()
-    await session.refresh(post)
+    image_urls = None
+    if post.image_urls:
+        try:
+            image_urls = json.loads(post.image_urls)
+        except Exception:
+            pass
 
     return PostResponse(
         id=post.id,
         author_id=post.author_id,
+        author_name=profile.name if profile else "ChefGPT User",
+        author_avatar=profile.avatar_url if profile else None,
         content=post.content,
-        image_urls=post_data.image_urls,
-        video_url=post.video_url,
-        recipe_id=post.recipe_id,
-        like_count=0,
-        comment_count=0,
-        is_liked_by_me=False,
+        image_urls=image_urls,
+        like_count=post.like_count,
+        comment_count=post.comment_count,
+        is_liked_by_me=is_liked,
         created_at=post.created_at,
     )
 
 
-@router.post("/{post_id}/like", status_code=status.HTTP_204_NO_CONTENT)
-async def like_post(
-    post_id: int,
-    user_id: str = Depends(get_current_user_id),
+# ── Feed ──────────────────────────────────────────────────────────────────────
+
+
+@router.get("", response_model=dict)
+async def get_posts(
+    page: int = 1,
+    limit: int = 20,
+    current_user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
-) -> None:
-    """Like a post."""
-    # Check if post exists
-    post_statement = select(Post).where(Post.id == post_id)
-    post_result = await session.execute(post_statement)
-    post = post_result.scalar_one_or_none()
-
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
-        )
-
-    # Check if already liked
-    like_statement = select(Like).where(
-        Like.post_id == post_id,
-        Like.user_id == user_id,
+):
+    """Get paginated social feed (newest first)."""
+    offset = (page - 1) * limit
+    q = (
+        select(Post)
+        .where(Post.is_public == True)  # noqa: E712
+        .order_by(Post.created_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
-    like_result = await session.execute(like_statement)
-    existing_like = like_result.scalar_one_or_none()
+    posts = (await session.execute(q)).scalars().all()
 
-    if existing_like:
-        # Unlike
-        await session.delete(existing_like)
-        post.like_count = max(0, post.like_count - 1)
-    else:
-        # Like
-        like = Like(user_id=user_id, post_id=post_id)
-        session.add(like)
-        post.like_count += 1
+    responses = []
+    for p in posts:
+        r = await _build_post_response(p, current_user_id, session)
+        responses.append(r.model_dump())
 
+    return {"posts": responses, "page": page, "has_more": len(posts) == limit}
+
+
+# ── Create post ───────────────────────────────────────────────────────────────
+
+
+@router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+async def create_post(
+    body: PostCreate,
+    current_user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Create a new post."""
+    image_json = json.dumps(body.image_urls) if body.image_urls else None
+    post = Post(
+        author_id=current_user_id,
+        content=body.content,
+        image_urls=image_json,
+        created_at=datetime.utcnow(),
+    )
+    session.add(post)
+    await session.commit()
+    await session.refresh(post)
+    return await _build_post_response(post, current_user_id, session)
+
+
+# ── Delete post ───────────────────────────────────────────────────────────────
+
+
+@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(
+    post_id: int,
+    current_user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Delete own post (author only)."""
+    q = select(Post).where(Post.id == post_id, Post.author_id == current_user_id)
+    post = (await session.execute(q)).scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found or not authorized")
+    await session.delete(post)
     await session.commit()
 
 
-@router.get("/{post_id}/comments", response_model=List[CommentResponse])
+# ── Like / unlike ─────────────────────────────────────────────────────────────
+
+
+@router.post("/{post_id}/like", response_model=dict)
+async def toggle_like(
+    post_id: int,
+    current_user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Toggle like on a post. Returns {liked: bool, like_count: int}."""
+    post = (await session.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    like_q = select(Like).where(Like.user_id == current_user_id, Like.post_id == post_id)
+    existing = (await session.execute(like_q)).scalar_one_or_none()
+
+    if existing:
+        await session.delete(existing)
+        post.like_count = max(0, post.like_count - 1)
+        liked = False
+    else:
+        session.add(Like(user_id=current_user_id, post_id=post_id))
+        post.like_count += 1
+        liked = True
+
+    session.add(post)
+    await session.commit()
+    return {"liked": liked, "like_count": post.like_count}
+
+
+# ── Comments ──────────────────────────────────────────────────────────────────
+
+
+@router.get("/{post_id}/comments", response_model=dict)
 async def get_comments(
     post_id: int,
+    current_user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
-) -> List[CommentResponse]:
-    """Get comments for a post."""
-    statement = (
+):
+    """Get top-level comments for a post."""
+    q = (
         select(Comment)
-        .where(Comment.post_id == post_id)
-        .order_by(Comment.created_at.desc())
+        .where(Comment.post_id == post_id, Comment.parent_id == None)  # noqa: E711
+        .order_by(Comment.created_at.asc())
     )
+    comments = (await session.execute(q)).scalars().all()
 
-    result = await session.execute(statement)
-    comments = result.scalars().all()
-
-    # TODO: Add user info
-    return [
-        CommentResponse(
-            id=comment.id,
-            user_id=comment.user_id,
-            content=comment.content,
-            like_count=comment.like_count,
-            parent_id=comment.parent_id,
-            created_at=comment.created_at,
+    result = []
+    for c in comments:
+        profile_q = select(Profile).where(Profile.user_id == c.user_id)
+        profile = (await session.execute(profile_q)).scalar_one_or_none()
+        result.append(
+            CommentResponse(
+                id=c.id,
+                user_id=c.user_id,
+                user_name=profile.name if profile else "ChefGPT User",
+                user_avatar=profile.avatar_url if profile else None,
+                content=c.content,
+                like_count=c.like_count,
+                parent_id=c.parent_id,
+                created_at=c.created_at,
+            ).model_dump()
         )
-        for comment in comments
-    ]
+    return {"comments": result}
 
 
-@router.post("/{post_id}/comments", response_model=CommentResponse)
+@router.post(
+    "/{post_id}/comments",
+    response_model=CommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_comment(
     post_id: int,
-    comment_data: CommentCreate,
-    user_id: str = Depends(get_current_user_id),
+    body: CommentCreate,
+    current_user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
-) -> CommentResponse:
-    """Create a comment on a post."""
-    # Check if post exists
-    post_statement = select(Post).where(Post.id == post_id)
-    post_result = await session.execute(post_statement)
-    post = post_result.scalar_one_or_none()
-
+):
+    """Add a comment to a post."""
+    post = (await session.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
     if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Post not found",
-        )
+        raise HTTPException(status_code=404, detail="Post not found")
 
     comment = Comment(
         post_id=post_id,
-        user_id=user_id,
-        content=comment_data.content,
-        parent_id=comment_data.parent_id,
+        user_id=current_user_id,
+        content=body.content,
+        parent_id=body.parent_id,
+        created_at=datetime.utcnow(),
     )
-
     session.add(comment)
     post.comment_count += 1
-
+    session.add(post)
     await session.commit()
     await session.refresh(comment)
+
+    profile_q = select(Profile).where(Profile.user_id == current_user_id)
+    profile = (await session.execute(profile_q)).scalar_one_or_none()
 
     return CommentResponse(
         id=comment.id,
         user_id=comment.user_id,
+        user_name=profile.name if profile else "ChefGPT User",
+        user_avatar=profile.avatar_url if profile else None,
         content=comment.content,
         like_count=0,
         parent_id=comment.parent_id,

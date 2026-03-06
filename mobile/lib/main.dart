@@ -5,16 +5,6 @@ import 'core/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // TODO: Initialize Firebase
-  // await Firebase.initializeApp();
-
-  // TODO: Initialize Supabase
-  // await Supabase.initialize(
-  //   url: 'YOUR_SUPABASE_URL',
-  //   anonKey: 'YOUR_SUPABASE_ANON_KEY',
-  // );
-
   runApp(
     const ProviderScope(
       child: ChefGPTApp(),
@@ -22,16 +12,17 @@ void main() async {
   );
 }
 
-class ChefGPTApp extends StatelessWidget {
+class ChefGPTApp extends ConsumerWidget {
   const ChefGPTApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'ChefGPT',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: router,
     );
   }
 }

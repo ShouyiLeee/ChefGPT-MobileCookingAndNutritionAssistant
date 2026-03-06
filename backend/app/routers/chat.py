@@ -1,19 +1,35 @@
-"""Chat router."""
+"""Chat router — cooking & nutrition assistant powered by Gemini."""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
+
 from app.core.database import get_session
 from app.core.security import get_current_user_id
-from app.schemas.chat import (
-    ChatQueryRequest,
-    ChatMessageResponse,
-    ChatHistoryResponse,
-)
 from app.models.chat import ChatSession, ChatMessage
-from sqlmodel import select
-from datetime import datetime
-import uuid
+from app.services.gemini import gemini_service
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
+
+
+class ChatQueryRequest(BaseModel):
+    message: str
+    session_id: Optional[int] = None
+
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    message: str
+    role: str
+    timestamp: datetime
+
+
+class ChatHistoryResponse(BaseModel):
+    session_id: int
+    messages: List[ChatMessageResponse]
+    created_at: datetime
 
 
 @router.post("/query", response_model=ChatMessageResponse)
@@ -22,98 +38,88 @@ async def send_message(
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
 ) -> ChatMessageResponse:
-    """Send a message to the AI chatbot."""
-    # Get or create session
+    """Send a message to ChefGPT AI assistant."""
+    # Get or create chat session
     if request.session_id:
-        statement = select(ChatSession).where(
-            ChatSession.id == request.session_id,
-            ChatSession.user_id == user_id,
-        )
-        result = await session.execute(statement)
-        chat_session = result.scalar_one_or_none()
-
-        if not chat_session:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Chat session not found",
+        result = await session.execute(
+            select(ChatSession).where(
+                ChatSession.id == request.session_id,
+                ChatSession.user_id == user_id,
             )
+        )
+        chat_session = result.scalar_one_or_none()
+        if not chat_session:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat session not found")
     else:
-        # Create new session
         chat_session = ChatSession(user_id=user_id, title="New Chat")
         session.add(chat_session)
         await session.flush()
 
-    # Save user message
-    user_message = ChatMessage(
-        session_id=chat_session.id,
-        role="user",
-        content=request.message,
+    # Load recent history for context (last 10 messages)
+    history_result = await session.execute(
+        select(ChatMessage)
+        .where(ChatMessage.session_id == chat_session.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(10)
     )
-    session.add(user_message)
+    recent = list(reversed(history_result.scalars().all()))
+    history = [{"role": msg.role, "parts": [msg.content]} for msg in recent]
+
+    # Save user message
+    user_msg = ChatMessage(session_id=chat_session.id, role="user", content=request.message)
+    session.add(user_msg)
     await session.commit()
 
-    # TODO: Call LLM service to generate response
-    # For now, return a placeholder response
-    response_content = "This is a placeholder response. LLM integration coming soon!"
+    # Call Gemini
+    try:
+        reply = await gemini_service.chat(request.message, history)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"AI service error: {str(e)}",
+        )
 
     # Save assistant message
-    assistant_message = ChatMessage(
-        session_id=chat_session.id,
-        role="assistant",
-        content=response_content,
-    )
-    session.add(assistant_message)
+    assistant_msg = ChatMessage(session_id=chat_session.id, role="model", content=reply)
+    session.add(assistant_msg)
     await session.commit()
-    await session.refresh(assistant_message)
+    await session.refresh(assistant_msg)
 
     return ChatMessageResponse(
-        id=str(assistant_message.id),
-        message=assistant_message.content,
-        type="assistant",
-        timestamp=assistant_message.created_at,
+        id=str(assistant_msg.id),
+        message=assistant_msg.content,
+        role="assistant",
+        timestamp=assistant_msg.created_at,
     )
 
 
-@router.get("/history", response_model=list[ChatHistoryResponse])
+@router.get("/history", response_model=List[ChatHistoryResponse])
 async def get_chat_history(
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
-) -> list[ChatHistoryResponse]:
-    """Get user's chat history."""
-    statement = select(ChatSession).where(
-        ChatSession.user_id == user_id,
-        ChatSession.is_active == True,
-    ).order_by(ChatSession.created_at.desc())
-
-    result = await session.execute(statement)
-    sessions = result.scalars().all()
+) -> List[ChatHistoryResponse]:
+    """Get all chat sessions for the current user."""
+    sessions_result = await session.execute(
+        select(ChatSession)
+        .where(ChatSession.user_id == user_id, ChatSession.is_active == True)
+        .order_by(ChatSession.created_at.desc())
+    )
+    sessions = sessions_result.scalars().all()
 
     history = []
-    for chat_session in sessions:
-        # Get messages for this session
-        messages_statement = select(ChatMessage).where(
-            ChatMessage.session_id == chat_session.id
-        ).order_by(ChatMessage.created_at)
-
-        messages_result = await session.execute(messages_statement)
-        messages = messages_result.scalars().all()
-
-        message_responses = [
-            ChatMessageResponse(
-                id=str(msg.id),
-                message=msg.content,
-                type=msg.role,
-                timestamp=msg.created_at,
-            )
-            for msg in messages
-        ]
-
-        history.append(
-            ChatHistoryResponse(
-                session_id=chat_session.id,
-                messages=message_responses,
-                created_at=chat_session.created_at,
-            )
+    for cs in sessions:
+        msgs_result = await session.execute(
+            select(ChatMessage)
+            .where(ChatMessage.session_id == cs.id)
+            .order_by(ChatMessage.created_at)
         )
-
+        messages = [
+            ChatMessageResponse(
+                id=str(m.id), message=m.content, role=m.role, timestamp=m.created_at
+            )
+            for m in msgs_result.scalars().all()
+        ]
+        history.append(ChatHistoryResponse(
+            session_id=cs.id, messages=messages, created_at=cs.created_at
+        ))
     return history

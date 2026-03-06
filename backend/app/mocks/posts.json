@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "author": {
+      "id": "user_001",
+      "name": "Nguyễn Thị Lan",
+      "avatar_url": null
+    },
+    "content": "Hôm nay mình nấu canh chua cá lóc, ngon lắm! Cá tươi mua ngoài chợ, thêm cà chua và dứa vào là chuẩn vị rồi 🍲",
+    "image_urls": [],
+    "recipe_name": "Canh chua cá lóc",
+    "like_count": 24,
+    "comment_count": 5,
+    "is_liked_by_me": false,
+    "created_at": "2026-03-03T08:30:00Z"
+  },
+  {
+    "id": 2,
+    "author": {
+      "id": "user_002",
+      "name": "Trần Minh Tuấn",
+      "avatar_url": null
+    },
+    "content": "Bữa sáng healthy: bánh mì nguyên cám + trứng luộc + salad rau xanh. Chỉ 350 calories mà no cả buổi sáng 💪",
+    "image_urls": [],
+    "recipe_name": "Bữa sáng eat clean",
+    "like_count": 41,
+    "comment_count": 8,
+    "is_liked_by_me": false,
+    "created_at": "2026-03-03T07:15:00Z"
+  },
+  {
+    "id": 3,
+    "author": {
+      "id": "user_003",
+      "name": "Phạm Thu Hương",
+      "avatar_url": null
+    },
+    "content": "Thử công thức bún bò Huế nhà làm cuối tuần. Nước dùng ninh xương heo 4 tiếng, thêm sả và mắm ruốc là chuẩn vị miền Trung 🌶️",
+    "image_urls": [],
+    "recipe_name": "Bún bò Huế",
+    "like_count": 67,
+    "comment_count": 12,
+    "is_liked_by_me": false,
+    "created_at": "2026-03-02T18:45:00Z"
+  },
+  {
+    "id": 4,
+    "author": {
+      "id": "user_004",
+      "name": "Lê Văn Khoa",
+      "avatar_url": null
+    },
+    "content": "Keto day 14: thịt bò xào bơ tỏi + salad bơ + trứng chiên. Giảm được 2kg sau 2 tuần, cảm giác tràn đầy năng lượng!",
+    "image_urls": [],
+    "recipe_name": "Bữa ăn Keto",
+    "like_count": 33,
+    "comment_count": 6,
+    "is_liked_by_me": false,
+    "created_at": "2026-03-02T12:00:00Z"
+  },
+  {
+    "id": 5,
+    "author": {
+      "id": "user_005",
+      "name": "Đỗ Quỳnh Anh",
+      "avatar_url": null
+    },
+    "content": "Cơm gà Hội An cuối tuần cho cả gia đình. Bí quyết là gà ta ta nấu nước sôi già, cơm nấu bằng nước luộc gà thơm lắm 🍚🐔",
+    "image_urls": [],
+    "recipe_name": "Cơm gà Hội An",
+    "like_count": 89,
+    "comment_count": 19,
+    "is_liked_by_me": false,
+    "created_at": "2026-03-01T11:30:00Z"
+  }
+]

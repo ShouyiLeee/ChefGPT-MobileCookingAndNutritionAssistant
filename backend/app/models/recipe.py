@@ -2,8 +2,7 @@
 from datetime import datetime
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column, Text, ARRAY, String
+from sqlalchemy import Column, Text
 
 
 class Ingredient(SQLModel, table=True):
@@ -52,12 +51,6 @@ class Recipe(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
 
-    # Embeddings for RAG
-    embedding: Optional[List[float]] = Field(
-        default=None,
-        sa_column=Column(Vector(3072))  # OpenAI embedding dimension
-    )
-
     # Relationships
     author: Optional["User"] = Relationship(back_populates="recipes")
     recipe_ingredients: List["RecipeIngredient"] = Relationship(back_populates="recipe")
@@ -91,7 +84,7 @@ class RecipeStep(SQLModel, table=True):
     id: int = Field(primary_key=True)
     recipe_id: int = Field(foreign_key="recipes.id", index=True)
     step_number: int = Field(nullable=False)
-    instruction: str = Field(sa_column=Column(Text), nullable=False)
+    instruction: str = Field(sa_column=Column(Text, nullable=False))
     image_url: Optional[str] = None
     duration: Optional[int] = None  # duration in seconds
     timer_required: bool = Field(default=False)
