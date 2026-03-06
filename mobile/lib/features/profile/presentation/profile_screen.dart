@@ -12,7 +12,7 @@ class ProfileScreen extends ConsumerWidget {
     final user = ref.watch(authProvider).user;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ho so')),
+      appBar: AppBar(title: const Text('Hồ sơ')),
       body: ListView(
         children: [
           // Header
@@ -36,7 +36,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(user?.name ?? 'Nguoi dung',
+                Text(user?.name ?? 'Người dùng',
                     style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 4),
                 Text(user?.email ?? '',
@@ -51,22 +51,22 @@ class ProfileScreen extends ConsumerWidget {
           const Divider(),
 
           // Menu
-          _item(context, Icons.chat_bubble, 'Chat voi ChefGPT',
+          _item(context, Icons.chat_bubble, 'Chat với ChefGPT',
               () => context.go('/home')),
-          _item(context, Icons.restaurant_menu, 'Goi y mon an',
+          _item(context, Icons.restaurant_menu, 'Gợi ý món ăn',
               () => context.go('/recipes')),
-          _item(context, Icons.calendar_month, 'Ke hoach bua an',
+          _item(context, Icons.calendar_month, 'Kế hoạch bữa ăn',
               () => context.go('/mealplan')),
-          _item(context, Icons.shopping_cart, 'Danh sach mua sam',
+          _item(context, Icons.shopping_cart, 'Danh sách mua sắm',
               () => context.go('/grocery')),
-          _item(context, Icons.people, 'Cong dong',
+          _item(context, Icons.people, 'Cộng đồng',
               () => context.go('/social')),
 
           const Divider(),
 
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Dang xuat',
+            title: const Text('Đăng xuất',
                 style: TextStyle(color: AppColors.error)),
             onTap: () => _confirmLogout(context, ref),
           ),
@@ -91,12 +91,12 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dang xuat'),
-        content: const Text('Ban co chac muon dang xuat?'),
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc muốn đăng xuất?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Huy')),
+              child: const Text('Huỷ')),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -104,7 +104,7 @@ class ProfileScreen extends ConsumerWidget {
               context.go('/login');
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Dang xuat'),
+            child: const Text('Đăng xuất'),
           ),
         ],
       ),

@@ -26,22 +26,22 @@ class MainNavigation extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_menu_outlined),
             activeIcon: Icon(Icons.restaurant_menu),
-            label: 'Mon an',
+            label: 'Món ăn',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month_outlined),
             activeIcon: Icon(Icons.calendar_month),
-            label: 'Thuc don',
+            label: 'Thực đơn',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart_outlined),
             activeIcon: Icon(Icons.shopping_cart),
-            label: 'Mua sam',
+            label: 'Mua sắm',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
-            label: 'Cong dong',
+            label: 'Cộng đồng',
           ),
         ],
       ),
