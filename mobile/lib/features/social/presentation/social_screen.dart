@@ -195,7 +195,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(
-                ok ? 'Bai dang da duoc chia se!' : 'Dang bai that bai'),
+                ok ? 'Bài đăng đã được chia sẻ!' : 'Đăng bài thất bại'),
             backgroundColor: ok ? AppColors.primary : AppColors.error,
           ));
         },
@@ -210,7 +210,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Cong dong'),
+        title: const Text('Cộng đồng'),
         centerTitle: false,
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
@@ -231,7 +231,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.edit_rounded),
-        label: const Text('Dang bai'),
+        label: const Text('Đăng bài'),
       ),
       body: state.isLoading
           ? const _LoadingFeed()
@@ -401,7 +401,7 @@ class _PostCardState extends State<_PostCard>
                           Icon(Icons.delete_outline,
                               color: Colors.red, size: 18),
                           SizedBox(width: 8),
-                          Text('Xoa bai',
+                          Text('Xóa bài',
                               style: TextStyle(color: Colors.red)),
                         ],
                       ),
@@ -433,7 +433,7 @@ class _PostCardState extends State<_PostCard>
                         GestureDetector(
                           onTap: () => setState(() => _expanded = true),
                           child: const Text(
-                            'Xem them',
+                            'Xem thêm',
                             style: TextStyle(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -636,7 +636,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             ),
           ),
           const Text(
-            'Chia se dieu gi do...',
+            'Chia sẻ điều gì đó...',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
           ),
           const SizedBox(height: 16),
@@ -648,7 +648,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
             autofocus: true,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Ban dang nghi gi ve am thuc?',
+              hintText: 'Bạn đang nghĩ gì về ẩm thực?',
               hintStyle: const TextStyle(color: AppColors.textHint),
               filled: true,
               fillColor: AppColors.background,
@@ -672,7 +672,7 @@ class _CreatePostSheetState extends State<_CreatePostSheet> {
                           strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.send_rounded),
-              label: Text(_sending ? 'Dang dang...' : 'Dang bai'),
+              label: Text(_sending ? 'Đang đăng...' : 'Đăng bài'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 backgroundColor: AppColors.primary,
@@ -786,7 +786,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
               child: Row(
                 children: [
                   const Text(
-                    'Binh luan',
+                    'Bình luận',
                     style: TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 16),
                   ),
@@ -822,7 +822,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                                   size: 48, color: AppColors.textHint),
                               SizedBox(height: 12),
                               Text(
-                                'Chua co binh luan.\nHay la nguoi dau tien!',
+                                'Chưa có bình luận.\nHãy là người đầu tiên!',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                     color: AppColors.textSecondary),
@@ -850,7 +850,7 @@ class _CommentsSheetState extends ConsumerState<_CommentsSheet> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       decoration: InputDecoration(
-                        hintText: 'Them binh luan...',
+                        hintText: 'Thêm bình luận...',
                         hintStyle:
                             const TextStyle(color: AppColors.textHint),
                         filled: true,
@@ -1051,11 +1051,11 @@ class _EmptyFeed extends StatelessWidget {
           const Icon(Icons.restaurant_menu,
               size: 72, color: AppColors.primaryLight),
           const SizedBox(height: 16),
-          const Text('Chua co bai dang nao!',
+          const Text('Chưa có bài đăng nào!',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           const Text(
-            'Hay la nguoi dau tien chia se\ncong thuc hoac meo nau an.',
+            'Hãy là người đầu tiên chia sẻ\ncông thức hoặc mẹo nấu ăn.',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.textSecondary),
           ),
@@ -1063,7 +1063,7 @@ class _EmptyFeed extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onPost,
             icon: const Icon(Icons.edit_rounded),
-            label: const Text('Dang bai dau tien'),
+            label: const Text('Đăng bài đầu tiên'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -1104,7 +1104,7 @@ class _ErrorView extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Thu lai'),
+              label: const Text('Thử lại'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,

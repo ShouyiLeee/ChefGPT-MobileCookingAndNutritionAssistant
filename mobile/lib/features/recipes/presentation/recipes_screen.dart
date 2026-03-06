@@ -59,7 +59,7 @@ class _RecipesNotifier extends StateNotifier<_RecipesState> {
       if (ingredients.isEmpty) {
         state = state.copyWith(
             isLoading: false,
-            error: 'Khong nhan dien duoc nguyen lieu trong anh.');
+            error: 'Không nhận diện được nguyên liệu trong ảnh.');
         return;
       }
       await suggestFromText(ingredients, []);
@@ -91,9 +91,9 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
 
   static const _filterOptions = [
     'chay',
-    'khong cay',
-    'it dau',
-    'khong gluten',
+    'không cay',
+    'ít dầu',
+    'không gluten',
     'keto',
   ];
 
@@ -115,7 +115,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
   void _suggest() {
     if (_ingredients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui long them it nhat 1 nguyen lieu')),
+        const SnackBar(content: Text('Vui lòng thêm ít nhất 1 nguyên liệu')),
       );
       return;
     }
@@ -140,7 +140,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Goi y mon an'),
+        title: const Text('Gợi ý món ăn'),
         actions: [
           if (state.dishes.isNotEmpty)
             TextButton(
@@ -151,7 +151,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   _selectedFilters.clear();
                 });
               },
-              child: const Text('Lam moi'),
+              child: const Text('Làm mới'),
             )
         ],
       ),
@@ -162,7 +162,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Gemini dang goi y mon an...'),
+                Text('Gemini đang gợi ý món ăn...'),
               ],
             ))
           : state.dishes.isNotEmpty
@@ -225,7 +225,7 @@ class _InputPanel extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onCamera,
             icon: const Icon(Icons.camera_alt),
-            label: const Text('Chup anh nguyen lieu'),
+            label: const Text('Chụp ảnh nguyên liệu'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
@@ -235,7 +235,7 @@ class _InputPanel extends StatelessWidget {
             Expanded(child: Divider()),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
-              child: Text('hoac nhap thu cong'),
+              child: Text('hoặc nhập thủ công'),
             ),
             Expanded(child: Divider()),
           ]),
@@ -248,7 +248,7 @@ class _InputPanel extends StatelessWidget {
                 child: TextField(
                   controller: ingredientCtrl,
                   decoration: const InputDecoration(
-                    hintText: 'Them nguyen lieu (vi du: trung, ca chua)',
+                    hintText: 'Thêm nguyên liệu (ví dụ: trứng, cà chua)',
                     prefixIcon: Icon(Icons.add),
                   ),
                   onSubmitted: (_) => onAddIngredient(),
@@ -257,7 +257,7 @@ class _InputPanel extends StatelessWidget {
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: onAddIngredient,
-                child: const Text('Them'),
+                child: const Text('Thêm'),
               ),
             ],
           ),
@@ -282,7 +282,7 @@ class _InputPanel extends StatelessWidget {
           ],
 
           // Filters
-          Text('Bo loc:',
+          Text('Bộ lọc:',
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           Wrap(
@@ -315,7 +315,7 @@ class _InputPanel extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onSuggest,
             icon: const Icon(Icons.auto_awesome),
-            label: const Text('Goi y mon an voi Gemini AI'),
+            label: const Text('Gợi ý món ăn với Gemini AI'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               backgroundColor: AppColors.primary,
@@ -407,7 +407,7 @@ class _DishCardState extends State<_DishCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Huong dan nau:',
+                  Text('Hướng dẫn nấu:',
                       style: Theme.of(context).textTheme.titleSmall),
                   const SizedBox(height: 8),
                   ...d.steps.asMap().entries.map(

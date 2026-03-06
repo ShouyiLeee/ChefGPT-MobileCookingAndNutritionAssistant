@@ -42,7 +42,7 @@ class _ChatNotifier extends StateNotifier<List<ChatMessage>> {
           .toList();
 
       final res = await _api.sendChat(text, history);
-      final reply = res['message'] as String? ?? 'Xin loi, co loi xay ra.';
+      final reply = res['message'] as String? ?? 'Xin lỗi, có lỗi xảy ra.';
 
       state = state
           .map((m) =>
@@ -105,7 +105,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Xoa lich su',
+            tooltip: 'Xóa lịch sử',
             onPressed: () => ref.read(_chatMessagesProvider.notifier).clear(),
           ),
         ],
@@ -139,10 +139,10 @@ class _QuickActions extends StatelessWidget {
   const _QuickActions({required this.onTap});
 
   static const _actions = [
-    'Goi y mon tu trung va ca chua',
-    'Mon eat clean cho bua sang',
-    'Cong thuc pho bo don gian',
-    'Thuc don tang co 2000 kcal',
+    'Gợi ý món từ trứng và cà chua',
+    'Món eat clean cho bữa sáng',
+    'Công thức phở bò đơn giản',
+    'Thực đơn tăng cơ 2000 kcal',
   ];
 
   @override
@@ -178,10 +178,10 @@ class _EmptyChat extends StatelessWidget {
         children: [
           const Icon(Icons.restaurant, size: 64, color: AppColors.primary),
           const SizedBox(height: 16),
-          Text('Xin chao! Toi la ChefGPT',
+          Text('Xin chào! Tôi là ChefGPT',
               style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          Text('Hoi toi bat ky dieu gi ve nau an',
+          Text('Hỏi tôi bất kỳ điều gì về nấu ăn',
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -257,7 +257,7 @@ class _InputBar extends StatelessWidget {
             child: TextField(
               controller: controller,
               decoration: InputDecoration(
-                hintText: 'Hoi ve nau an, dinh duong...',
+                hintText: 'Hỏi về nấu ăn, dinh dưỡng...',
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(

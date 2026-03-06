@@ -78,9 +78,9 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
   int _calories = 1800;
 
   static const _goals = {
-    'eat_clean': 'An sach (Eat Clean)',
-    'weight_loss': 'Giam can',
-    'muscle_gain': 'Tang co',
+    'eat_clean': 'Ăn sạch (Eat Clean)',
+    'weight_loss': 'Giảm cân',
+    'muscle_gain': 'Tăng cơ',
     'keto': 'Keto',
   };
 
@@ -90,7 +90,7 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ke hoach bua an'),
+        title: const Text('Kế hoạch bữa ăn'),
         actions: [
           if (state.plan.isNotEmpty)
             TextButton(
@@ -106,7 +106,7 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Gemini dang tao thuc don...'),
+                Text('Gemini đang tạo thực đơn...'),
               ],
             ))
           : state.plan.isNotEmpty
@@ -161,7 +161,7 @@ class _ConfigPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Goal
-          Text('Muc tieu dinh duong',
+          Text('Mục tiêu dinh dưỡng',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           ...goals.entries.map((e) => RadioListTile<String>(
@@ -176,7 +176,7 @@ class _ConfigPanel extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Days
-          Text('So ngay: $days ngay',
+          Text('Số ngày: $days ngày',
               style: Theme.of(context).textTheme.titleMedium),
           Slider(
             value: days.toDouble(),
@@ -190,7 +190,7 @@ class _ConfigPanel extends StatelessWidget {
           const SizedBox(height: 8),
 
           // Calories
-          Text('Muc tieu calories: $calories kcal/ngay',
+          Text('Mục tiêu calories: $calories kcal/ngày',
               style: Theme.of(context).textTheme.titleMedium),
           Slider(
             value: calories.toDouble(),
@@ -219,7 +219,7 @@ class _ConfigPanel extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onGenerate,
             icon: const Icon(Icons.auto_awesome),
-            label: const Text('Tao thuc don voi Gemini AI'),
+            label: const Text('Tạo thực đơn với Gemini AI'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               backgroundColor: AppColors.primary,
@@ -266,7 +266,7 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tong quan dinh duong trung binh/ngay',
+            Text('Tổng quan dinh dưỡng trung bình/ngày',
                 style: Theme.of(context)
                     .textTheme
                     .titleSmall
@@ -333,18 +333,18 @@ class _DayCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Ngay ${day.day}',
+            Text('Ngày ${day.day}',
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
                     ?.copyWith(color: AppColors.primary)),
             const Divider(),
-            _MealRow(icon: Icons.wb_sunny, label: 'Sang', meal: day.breakfast),
+            _MealRow(icon: Icons.wb_sunny, label: 'Sáng', meal: day.breakfast),
             const SizedBox(height: 8),
-            _MealRow(icon: Icons.lunch_dining, label: 'Trua', meal: day.lunch),
+            _MealRow(icon: Icons.lunch_dining, label: 'Trưa', meal: day.lunch),
             const SizedBox(height: 8),
             _MealRow(
-                icon: Icons.dinner_dining, label: 'Toi', meal: day.dinner),
+                icon: Icons.dinner_dining, label: 'Tối', meal: day.dinner),
           ],
         ),
       ),

@@ -39,13 +39,13 @@ class AuthState extends Equatable {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _authRepository;
 
-  AuthNotifier(this._authRepository) : super(const AuthState()) {
+  AuthNotifier(this._authRepository) : super(const AuthState(isLoading: true)) {
     _checkAuthStatus();
   }
 
   Future<void> _checkAuthStatus() async {
     final isLoggedIn = await _authRepository.isLoggedIn();
-    state = state.copyWith(isAuthenticated: isLoggedIn);
+    state = state.copyWith(isLoading: false, isAuthenticated: isLoggedIn);
   }
 
   Future<void> login(String email, String password) async {
