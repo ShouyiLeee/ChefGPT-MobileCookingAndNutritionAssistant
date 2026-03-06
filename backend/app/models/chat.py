@@ -29,8 +29,8 @@ class ChatMessage(SQLModel, table=True):
     id: int = Field(primary_key=True)
     session_id: int = Field(foreign_key="chat_sessions.id", index=True)
     role: str = Field(nullable=False)  # user, assistant, system
-    content: str = Field(sa_column=Column(Text), nullable=False)
-    metadata: Optional[str] = None  # JSON string for additional data
+    content: str = Field(sa_column=Column(Text, nullable=False))
+    extra_data: Optional[str] = None  # JSON string for additional data
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships

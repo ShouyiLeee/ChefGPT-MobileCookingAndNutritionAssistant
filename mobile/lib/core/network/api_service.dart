@@ -1,90 +1,151 @@
 import 'package:dio/dio.dart';
-import 'package:retrofit/retrofit.dart';
-import '../../shared/models/recipe_model.dart';
-import '../../shared/models/user_model.dart';
-import '../../shared/models/chat_message.dart';
-import '../../shared/models/post_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../constants/app_constants.dart';
 
-part 'api_service.g.dart';
+/// Plain Dio-based API client — no code generation needed.
+class ApiService {
+  late final Dio _dio;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-@RestApi()
-abstract class ApiService {
-  factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
+  ApiService() {
+    _dio = Dio(BaseOptions(
+      baseUrl: AppConstants.baseUrl,
+      connectTimeout: AppConstants.connectionTimeout,
+      receiveTimeout: AppConstants.receiveTimeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ));
 
-  // Auth Endpoints
-  @POST('/auth/signup')
-  Future<Map<String, dynamic>> signup(@Body() Map<String, dynamic> data);
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token =
+            await _secureStorage.read(key: AppConstants.accessTokenKey);
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          final refreshed = await _refreshToken();
+          if (refreshed) {
+            return handler.resolve(await _retry(error.requestOptions));
+          }
+        }
+        return handler.next(error);
+      },
+    ));
+  }
 
-  @POST('/auth/login')
-  Future<Map<String, dynamic>> login(@Body() Map<String, dynamic> data);
+  // ── Auth ──────────────────────────────────────────────────────────────────
 
-  @POST('/auth/logout')
-  Future<void> logout();
+  Future<Map<String, dynamic>> signup(Map<String, dynamic> data) async {
+    final res = await _dio.post('/auth/signup', data: data);
+    return res.data as Map<String, dynamic>;
+  }
 
-  // Recipe Endpoints
-  @GET('/recipes')
-  Future<List<RecipeModel>> getRecipes(@Query('search') String? search);
+  Future<Map<String, dynamic>> login(Map<String, dynamic> data) async {
+    final res = await _dio.post('/auth/login', data: data);
+    return res.data as Map<String, dynamic>;
+  }
 
-  @GET('/recipes/{id}')
-  Future<RecipeModel> getRecipeDetail(@Path('id') int id);
+  Future<void> logout() async {
+    try {
+      await _dio.post('/auth/logout');
+    } catch (_) {}
+  }
 
-  @POST('/recipes')
-  Future<RecipeModel> createRecipe(@Body() Map<String, dynamic> data);
+  // ── AI: Recipes / Ingredients ─────────────────────────────────────────────
 
-  @DELETE('/recipes/{id}')
-  Future<void> deleteRecipe(@Path('id') int id);
+  Future<Map<String, dynamic>> suggestRecipes(
+      List<String> ingredients, List<String> filters) async {
+    final res = await _dio.post('/recipes/suggest', data: {
+      'ingredients': ingredients,
+      'filters': filters,
+    });
+    return res.data as Map<String, dynamic>;
+  }
 
-  // Ingredients Recognition
-  @POST('/ingredients/recognize')
-  @MultiPart()
   Future<Map<String, dynamic>> recognizeIngredients(
-    @Part(name: 'image') File image,
-  );
+      List<int> imageBytes) async {
+    final formData = FormData.fromMap({
+      'image': MultipartFile.fromBytes(imageBytes, filename: 'photo.jpg'),
+    });
+    final res = await _dio.post('/ingredients/recognize', data: formData);
+    return res.data as Map<String, dynamic>;
+  }
 
-  // Chat Endpoints
-  @POST('/chat/query')
-  Future<ChatMessage> sendChatMessage(@Body() Map<String, dynamic> data);
+  // ── AI: Chat ──────────────────────────────────────────────────────────────
 
-  @GET('/chat/history')
-  Future<List<ChatMessage>> getChatHistory();
+  Future<Map<String, dynamic>> sendChat(
+      String message, List<Map<String, dynamic>> history) async {
+    final res = await _dio.post('/chat/query', data: {
+      'message': message,
+      'history': history,
+    });
+    return res.data as Map<String, dynamic>;
+  }
 
-  // Meal Plan Endpoints
-  @POST('/mealplan/generate')
-  Future<Map<String, dynamic>> generateMealPlan(@Body() Map<String, dynamic> data);
+  // ── AI: Meal Plan ─────────────────────────────────────────────────────────
 
-  @GET('/mealplan')
-  Future<List<Map<String, dynamic>>> getMealPlans();
+  Future<Map<String, dynamic>> generateMealPlan(
+      String goal, int days, int caloriesTarget) async {
+    final res = await _dio.post('/mealplan/generate', data: {
+      'goal': goal,
+      'days': days,
+      'calories_target': caloriesTarget,
+    });
+    return res.data as Map<String, dynamic>;
+  }
 
-  // Shopping List Endpoints
-  @POST('/shopping-list')
-  Future<Map<String, dynamic>> createShoppingList(@Body() Map<String, dynamic> data);
+  // ── Mock: Social Feed ─────────────────────────────────────────────────────
 
-  @GET('/shopping-list')
-  Future<List<Map<String, dynamic>>> getShoppingLists();
+  Future<Map<String, dynamic>> getMockPosts() async {
+    final res = await _dio.get('/posts/mock');
+    return res.data as Map<String, dynamic>;
+  }
 
-  @GET('/shopping-list/{id}')
-  Future<Map<String, dynamic>> getShoppingListDetail(@Path('id') int id);
+  // ── Mock: Shopping List ───────────────────────────────────────────────────
 
-  // Social/Posts Endpoints
-  @GET('/posts')
-  Future<List<PostModel>> getPosts(@Query('page') int page);
+  Future<Map<String, dynamic>> getMockShoppingList() async {
+    final res = await _dio.get('/shopping-list/mock');
+    return res.data as Map<String, dynamic>;
+  }
 
-  @GET('/posts/{id}')
-  Future<PostModel> getPostDetail(@Path('id') int id);
+  // ── Internal helpers ──────────────────────────────────────────────────────
 
-  @POST('/posts')
-  Future<PostModel> createPost(@Body() Map<String, dynamic> data);
+  Future<bool> _refreshToken() async {
+    try {
+      final refreshToken =
+          await _secureStorage.read(key: AppConstants.refreshTokenKey);
+      if (refreshToken == null) return false;
+      final res = await _dio
+          .post('/auth/refresh', data: {'refresh_token': refreshToken});
+      if (res.statusCode == 200) {
+        await _secureStorage.write(
+          key: AppConstants.accessTokenKey,
+          value: res.data['access_token'] as String,
+        );
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
 
-  @POST('/posts/{id}/like')
-  Future<void> likePost(@Path('id') int id);
-
-  @GET('/posts/{id}/comments')
-  Future<List<Map<String, dynamic>>> getPostComments(@Path('id') int id);
-
-  // Profile Endpoints
-  @GET('/profile')
-  Future<ProfileModel> getProfile();
-
-  @PUT('/profile/update')
-  Future<ProfileModel> updateProfile(@Body() Map<String, dynamic> data);
+  Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
+    return _dio.request<dynamic>(
+      requestOptions.path,
+      data: requestOptions.data,
+      queryParameters: requestOptions.queryParameters,
+      options: Options(
+        method: requestOptions.method,
+        headers: requestOptions.headers,
+      ),
+    );
+  }
 }
+
+final apiServiceProvider = Provider<ApiService>((ref) => ApiService());

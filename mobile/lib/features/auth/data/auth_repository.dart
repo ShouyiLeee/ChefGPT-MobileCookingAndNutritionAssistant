@@ -1,10 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/api_service.dart';
-import '../../../core/network/api_result.dart';
-import '../../../core/providers/dio_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../shared/models/user_model.dart';
+
+sealed class ApiResult<T> {
+  const ApiResult();
+  void onSuccess(void Function(T) fn);
+  void onFailure(void Function(String) fn);
+}
+
+class Success<T> extends ApiResult<T> {
+  final T data;
+  const Success(this.data);
+  void onSuccess(void Function(T) fn) => fn(data);
+  void onFailure(void Function(String) fn) {}
+}
+
+class Failure<T> extends ApiResult<T> {
+  final String message;
+  const Failure({required this.message});
+  void onSuccess(void Function(T) fn) {}
+  void onFailure(void Function(String) fn) => fn(message);
+}
 
 class AuthRepository {
   final ApiService _apiService;
@@ -19,13 +37,16 @@ class AuthRepository {
         'password': password,
       });
 
-      final accessToken = response['access_token'];
-      final refreshToken = response['refresh_token'];
-      final user = UserModel.fromJson(response['user']);
+      final accessToken = response['access_token'] as String;
+      final refreshToken = response['refresh_token'] as String;
+      final user = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
-      await _secureStorage.write(key: AppConstants.accessTokenKey, value: accessToken);
-      await _secureStorage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
-      await _secureStorage.write(key: AppConstants.userIdKey, value: user.id);
+      await _secureStorage.write(
+          key: AppConstants.accessTokenKey, value: accessToken);
+      await _secureStorage.write(
+          key: AppConstants.refreshTokenKey, value: refreshToken);
+      await _secureStorage.write(
+          key: AppConstants.userIdKey, value: user.id);
 
       return Success(user);
     } catch (e) {
@@ -33,7 +54,8 @@ class AuthRepository {
     }
   }
 
-  Future<ApiResult<UserModel>> signup(String email, String password, String? name) async {
+  Future<ApiResult<UserModel>> signup(
+      String email, String password, String? name) async {
     try {
       final response = await _apiService.signup({
         'email': email,
@@ -41,13 +63,16 @@ class AuthRepository {
         if (name != null) 'name': name,
       });
 
-      final accessToken = response['access_token'];
-      final refreshToken = response['refresh_token'];
-      final user = UserModel.fromJson(response['user']);
+      final accessToken = response['access_token'] as String;
+      final refreshToken = response['refresh_token'] as String;
+      final user = UserModel.fromJson(response['user'] as Map<String, dynamic>);
 
-      await _secureStorage.write(key: AppConstants.accessTokenKey, value: accessToken);
-      await _secureStorage.write(key: AppConstants.refreshTokenKey, value: refreshToken);
-      await _secureStorage.write(key: AppConstants.userIdKey, value: user.id);
+      await _secureStorage.write(
+          key: AppConstants.accessTokenKey, value: accessToken);
+      await _secureStorage.write(
+          key: AppConstants.refreshTokenKey, value: refreshToken);
+      await _secureStorage.write(
+          key: AppConstants.userIdKey, value: user.id);
 
       return Success(user);
     } catch (e) {
@@ -66,7 +91,8 @@ class AuthRepository {
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await _secureStorage.read(key: AppConstants.accessTokenKey);
+    final token =
+        await _secureStorage.read(key: AppConstants.accessTokenKey);
     return token != null;
   }
 }

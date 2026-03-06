@@ -12,7 +12,7 @@ class Post(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     author_id: str = Field(foreign_key="users.id", index=True)
-    content: str = Field(sa_column=Column(Text), nullable=False)
+    content: str = Field(sa_column=Column(Text, nullable=False))
     image_urls: Optional[str] = None  # JSON array as string
     video_url: Optional[str] = None
     recipe_id: Optional[int] = Field(foreign_key="recipes.id", index=True)
@@ -38,7 +38,7 @@ class Comment(SQLModel, table=True):
     post_id: int = Field(foreign_key="posts.id", index=True)
     user_id: str = Field(foreign_key="users.id", index=True)
     parent_id: Optional[int] = Field(foreign_key="comments.id", default=None)
-    content: str = Field(sa_column=Column(Text), nullable=False)
+    content: str = Field(sa_column=Column(Text, nullable=False))
     like_count: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None

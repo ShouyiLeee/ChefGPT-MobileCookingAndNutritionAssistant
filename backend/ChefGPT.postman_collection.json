@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "ChefGPT API",
+    "description": "ChefGPT — Mobile Cooking & Nutrition Assistant\nBase URL: http://localhost:8000\nDocs: http://localhost:8000/docs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "access_token", "value": "", "type": "string" },
+    { "key": "refresh_token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "01. Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "description": "Kiểm tra server có đang chạy không"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Auth",
+      "item": [
+        {
+          "name": "Signup — Đăng ký",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
+                  "  console.log('Tokens saved automatically!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/signup",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"Nguyen Van A\"\n}"
+            },
+            "description": "Đăng ký tài khoản. Token tự động lưu vào biến collection sau khi gọi thành công."
+          }
+        },
+        {
+          "name": "Login — Đăng nhập",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
+                  "  console.log('access_token saved:', json.access_token.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "description": "Đăng nhập. access_token và refresh_token tự động lưu vào biến {{access_token}} và {{refresh_token}}."
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  console.log('access_token refreshed!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "description": "Lấy access_token mới khi token cũ hết hạn (1 giờ). Dùng refresh_token (hết hạn sau 7 ngày)."
+          }
+        },
+        {
+          "name": "Logout — Đăng xuất",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/logout",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Đăng xuất tài khoản hiện tại."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Mock (không cần auth)",
+      "item": [
+        {
+          "name": "Social Feed — Bài đăng cộng đồng",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/posts/mock",
+            "description": "Trả về 5 bài đăng mẫu. Không cần đăng nhập."
+          }
+        },
+        {
+          "name": "Shopping List — Danh sách mua sắm",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/shopping-list/mock",
+            "description": "Trả về danh sách mua sắm mẫu (4 nhóm: Rau củ, Thịt, Ngũ cốc, Gia vị). Không cần đăng nhập."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. AI — Recipes (Gemini ~30-120s)",
+      "item": [
+        {
+          "name": "Suggest Recipes — Gợi ý món ăn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\", \"hành lá\"],\n  \"filters\": [\"ít dầu\", \"nhanh\"]\n}"
+            },
+            "description": "Gợi ý 3 món ăn từ nguyên liệu có sẵn.\nGemini 2.5 Flash — có thể mất 30-120 giây.\nfilters tuỳ chọn: ít dầu, chay, keto, không cay, v.v."
+          }
+        },
+        {
+          "name": "Recognize Ingredients — Nhận dạng nguyên liệu từ ảnh",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/ingredients/recognize",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Chọn file ảnh (JPG/PNG) chứa nguyên liệu"
+                }
+              ]
+            },
+            "description": "Upload ảnh thực phẩm → Gemini Vision nhận dạng và trả về danh sách nguyên liệu."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. AI — Chat (Gemini ~3-10s)",
+      "item": [
+        {
+          "name": "Send Message — Gửi tin nhắn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Gợi ý món ăn sáng đơn giản cho người bận rộn\",\n  \"session_id\": null\n}"
+            },
+            "description": "Chat với ChefGPT AI.\n- session_id: null = tạo session mới, hoặc truyền ID session cũ để tiếp tục hội thoại.\nResponse: { id, message, role, timestamp }"
+          }
+        },
+        {
+          "name": "Chat History — Lịch sử hội thoại",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/chat/history",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Lấy toàn bộ lịch sử chat của user hiện tại, phân theo session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. AI — Meal Plan (Gemini ~60-120s)",
+      "item": [
+        {
+          "name": "Generate Meal Plan — Tạo thực đơn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1800\n}"
+            },
+            "description": "Tạo thực đơn AI bằng Gemini 2.5 Flash.\nCó thể mất 60-120 giây — tăng timeout trong Postman Settings nếu cần.\n\ngoal options:\n  - eat_clean     → Ăn sạch, lành mạnh\n  - weight_loss   → Giảm cân\n  - muscle_gain   → Tăng cơ\n  - keto          → Keto (ít carb)\n  - maintenance   → Duy trì cân nặng\n\ndays: 1–14\ncalories_target: 1000–5000"
+          }
+        },
+        {
+          "name": "Get Saved Plans — Danh sách thực đơn đã lưu",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/mealplan",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Lấy danh sách tất cả thực đơn đã tạo và lưu trong DB."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -5,16 +5,6 @@ import 'core/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // TODO: Initialize Firebase
-  // await Firebase.initializeApp();
-
-  // TODO: Initialize Supabase
-  // await Supabase.initialize(
-  //   url: 'YOUR_SUPABASE_URL',
-  //   anonKey: 'YOUR_SUPABASE_ANON_KEY',
-  // );
-
   runApp(
     const ProviderScope(
       child: ChefGPTApp(),

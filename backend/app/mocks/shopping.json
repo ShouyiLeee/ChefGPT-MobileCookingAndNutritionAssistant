@@ -1,0 +1,43 @@
+{
+  "note": "Mock grocery list — auto-generated from a sample meal plan",
+  "categories": [
+    {
+      "name": "Rau củ",
+      "items": [
+        { "name": "Cà chua", "quantity": "500g", "checked": false },
+        { "name": "Hành tây", "quantity": "2 củ", "checked": false },
+        { "name": "Tỏi", "quantity": "1 đầu", "checked": false },
+        { "name": "Rau muống", "quantity": "300g", "checked": false },
+        { "name": "Cải thìa", "quantity": "200g", "checked": false },
+        { "name": "Cà rốt", "quantity": "2 củ", "checked": false },
+        { "name": "Khoai tây", "quantity": "3 củ", "checked": false }
+      ]
+    },
+    {
+      "name": "Thịt & Hải sản",
+      "items": [
+        { "name": "Thịt heo xay", "quantity": "300g", "checked": false },
+        { "name": "Ức gà", "quantity": "400g", "checked": false },
+        { "name": "Tôm sú", "quantity": "200g", "checked": false },
+        { "name": "Trứng gà", "quantity": "1 vỉ (10 quả)", "checked": false }
+      ]
+    },
+    {
+      "name": "Ngũ cốc & Tinh bột",
+      "items": [
+        { "name": "Gạo tẻ", "quantity": "1kg", "checked": false },
+        { "name": "Mì ống", "quantity": "500g", "checked": false },
+        { "name": "Bánh mì nguyên cám", "quantity": "1 ổ", "checked": false }
+      ]
+    },
+    {
+      "name": "Gia vị & Dầu ăn",
+      "items": [
+        { "name": "Nước mắm", "quantity": "1 chai", "checked": false },
+        { "name": "Dầu ô liu", "quantity": "1 chai nhỏ", "checked": false },
+        { "name": "Đường", "quantity": "200g", "checked": false },
+        { "name": "Hạt tiêu", "quantity": "1 gói nhỏ", "checked": false }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ aiosqlite==0.20.0
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
 python-dotenv==1.0.0
 pydantic-settings==2.1.0
 
@@ -19,16 +20,17 @@ pydantic-settings==2.1.0
 supabase==2.3.4
 
 # AI — Gemini 2.5 Flash (Google AI Studio free tier)
-google-generativeai>=0.8.0
+google-genai>=1.0.0
 
 # Image processing (for Gemini Vision multipart upload)
 pillow==10.2.0
 
-# HTTP Client
-httpx==0.26.0
+# HTTP Client (version constrained by supabase transitive dep)
+httpx>=0.24,<0.26
 
 # Utilities
 pydantic==2.5.3
+email-validator==2.1.0
 python-dateutil==2.8.2
 
 # Logging

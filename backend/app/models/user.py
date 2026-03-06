@@ -2,8 +2,6 @@
 from datetime import datetime
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import Column
 
 
 class User(SQLModel, table=True):

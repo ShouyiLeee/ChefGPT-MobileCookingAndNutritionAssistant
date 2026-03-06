@@ -1,28 +1,42 @@
-"""Vision API router for ingredient recognition."""
+"""Vision router — ingredient recognition via Gemini Vision."""
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+
+from app.core.config import settings
 from app.core.security import get_current_user_id
-from app.schemas.vision import IngredientRecognitionResponse
+from app.services.gemini import gemini_service
 
 router = APIRouter(prefix="/ingredients", tags=["Vision"])
 
+_ALLOWED = {f"image/{ext}" for ext in ["jpeg", "jpg", "png", "webp"]}
 
-@router.post("/recognize", response_model=IngredientRecognitionResponse)
+
+@router.post("/recognize")
 async def recognize_ingredients(
     image: UploadFile = File(...),
     user_id: str = Depends(get_current_user_id),
-) -> IngredientRecognitionResponse:
-    """Recognize ingredients from an uploaded image."""
-    # Validate file type
-    if not image.content_type or not image.content_type.startswith("image/"):
+):
+    """Recognize food ingredients from an uploaded photo using Gemini Vision."""
+    if not image.content_type or image.content_type not in _ALLOWED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image",
+            detail="File must be an image (jpeg/png/webp)",
         )
 
-    # TODO: Implement vision model integration
-    # For now, return placeholder
-    return IngredientRecognitionResponse(
-        ingredients=["tomato", "onion", "garlic", "chicken"],
-        confidence=0.85,
-        metadata={"model": "gpt-4-vision", "processing_time": 1.2},
-    )
+    file_size = 0
+    image_bytes = await image.read()
+    file_size = len(image_bytes)
+
+    if file_size > settings.max_upload_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image too large (max 10MB)",
+        )
+
+    try:
+        result = await gemini_service.recognize_ingredients(image_bytes)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"AI service error: {str(e)}",
+        )

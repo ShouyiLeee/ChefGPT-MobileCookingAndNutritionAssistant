@@ -1,134 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_service.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/models/post_model.dart';
 
-class SocialScreen extends ConsumerStatefulWidget {
+final _postsProvider = FutureProvider<List<PostModel>>((ref) async {
+  final api = ref.read(apiServiceProvider);
+  final res = await api.getMockPosts();
+  final posts = (res['posts'] as List<dynamic>? ?? [])
+      .map((p) => PostModel.fromJson(p as Map<String, dynamic>))
+      .toList();
+  return posts;
+});
+
+class SocialScreen extends ConsumerWidget {
   const SocialScreen({super.key});
 
   @override
-  ConsumerState<SocialScreen> createState() => _SocialScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postsAsync = ref.watch(_postsProvider);
 
-class _SocialScreenState extends ConsumerState<SocialScreen> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Community'),
+        title: const Text('Cong dong'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_photo_alternate),
-            onPressed: () {
-              // Create new post
-            },
+            icon: const Icon(Icons.refresh),
+            onPressed: () => ref.refresh(_postsProvider),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          // TODO: Refresh posts
-        },
-        child: ListView.builder(
-          controller: _scrollController,
-          itemCount: 0, // TODO: Connect to posts provider
-          itemBuilder: (context, index) {
-            return _buildPostCard();
-          },
+      body: postsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline,
+                  size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text('Khong tai duoc bai dang',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => ref.refresh(_postsProvider),
+                child: const Text('Thu lai'),
+              ),
+            ],
+          ),
+        ),
+        data: (posts) => RefreshIndicator(
+          onRefresh: () async => ref.refresh(_postsProvider),
+          child: posts.isEmpty
+              ? const Center(child: Text('Chua co bai dang nao'))
+              : ListView.builder(
+                  itemCount: posts.length,
+                  itemBuilder: (_, i) => _PostCard(post: posts[i]),
+                ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildPostCard() {
+class _PostCard extends StatelessWidget {
+  final PostModel post;
+  const _PostCard({required this.post});
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Post Header
           ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.person),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.primaryLight,
+              child: Text(
+                post.authorName.isNotEmpty
+                    ? post.authorName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(
+                    color: AppColors.primary, fontWeight: FontWeight.bold),
+              ),
             ),
-            title: const Text('User Name'),
-            subtitle: const Text('2 hours ago'),
-            trailing: IconButton(
-              icon: const Icon(Icons.more_vert),
-              onPressed: () {
-                // Show post options
-              },
-            ),
+            title: Text(post.authorName,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(post.createdAt,
+                style: const TextStyle(fontSize: 12)),
           ),
-
-          // Post Content
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Just made this delicious Vietnamese Pho! The broth took hours but totally worth it! 🍜',
-                  style: TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-
-                // Post Image
-                Container(
-                  height: 300,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.image, size: 64, color: AppColors.textHint),
-                  ),
-                ),
-              ],
-            ),
+            child: Text(post.content),
           ),
-
-          // Post Actions
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.favorite_border),
-                  onPressed: () {
-                    // Like post
-                  },
+                  icon: const Icon(Icons.favorite_border, size: 20),
+                  onPressed: null,
                 ),
-                const Text('245'),
-                const SizedBox(width: 16),
+                Text('${post.likeCount}',
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.comment_outlined),
-                  onPressed: () {
-                    // View comments
-                  },
+                  icon: const Icon(Icons.comment_outlined, size: 20),
+                  onPressed: null,
                 ),
-                const Text('32'),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: const Icon(Icons.bookmark_border),
-                  onPressed: () {
-                    // Bookmark post
-                  },
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.share),
-                  onPressed: () {
-                    // Share post
-                  },
-                ),
+                Text('${post.commentCount}',
+                    style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),

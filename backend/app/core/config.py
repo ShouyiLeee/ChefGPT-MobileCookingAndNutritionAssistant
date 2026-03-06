@@ -18,74 +18,44 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     environment: str = "development"
     debug: bool = True
-    secret_key: str
+    secret_key: str = "change-this-secret-key"
 
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
     reload: bool = True
 
-    # Database
-    database_url: str
-    database_pool_size: int = 20
-    database_max_overflow: int = 0
+    # Database (SQLite for dev — set postgresql:// URL for production)
+    database_url: str = "sqlite:///./chefgpt.db"
 
-    # Supabase
-    supabase_url: str
-    supabase_key: str
-    supabase_service_key: str
+    # Supabase (Auth only)
+    supabase_url: str = ""
+    supabase_key: str = ""
+    supabase_service_key: str = ""
 
     # JWT
-    jwt_secret_key: str
+    jwt_secret_key: str = "change-this-jwt-secret"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
-    # OpenAI
-    openai_api_key: str
-    openai_model: str = "gpt-4-turbo-preview"
-    openai_embedding_model: str = "text-embedding-3-large"
-
-    # Anthropic (Optional)
-    anthropic_api_key: str | None = None
-    anthropic_model: str = "claude-3-5-sonnet-20240620"
-
-    # Redis (Optional)
-    redis_url: str | None = None
+    # Gemini 2.5 Flash (Google AI Studio — free tier)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
 
     # File Storage
-    max_upload_size: int = 10485760  # 10MB
+    max_upload_size: int = 10_485_760  # 10MB
     allowed_image_extensions: List[str] = ["jpg", "jpeg", "png", "webp"]
-    upload_dir: str = "uploads"
 
     # CORS
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:8080"
 
     @property
     def cors_origins_list(self) -> List[str]:
-        """Get CORS origins as a list."""
-        return [origin.strip() for origin in self.cors_origins.split(",")]
-
-    # Rate Limiting
-    rate_limit_per_minute: int = 60
+        return [o.strip() for o in self.cors_origins.split(",")]
 
     # Logging
     log_level: str = "INFO"
-    log_format: str = "json"
-
-    # Vision API
-    vision_model: str = "gpt-4-vision-preview"
-    vision_max_tokens: int = 300
-
-    # RAG Settings
-    embedding_dimension: int = 3072
-    vector_search_limit: int = 10
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
-
-    # Celery (Optional)
-    celery_broker_url: str | None = None
-    celery_result_backend: str | None = None
 
 
 # Global settings instance
