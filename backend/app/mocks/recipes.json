@@ -1,0 +1,620 @@
+[
+  {
+    "id": 1,
+    "title": "Phở Bò",
+    "description": "Súp nước dùng bò đậm đà với bánh phở mềm, thịt bò tái và rau sống",
+    "cuisine": "Việt Nam",
+    "category": "Súp/Canh",
+    "difficulty": "hard",
+    "prep_time": 30,
+    "cook_time": 180,
+    "servings": 4,
+    "tags": ["phở", "bò", "súp", "nước dùng", "món chính"],
+    "ingredients": ["xương bò", "thịt bò tái", "bánh phở", "hành tây", "gừng", "hoa hồi", "quế", "đinh hương", "nước mắm", "hành lá", "giá đỗ", "rau húng"],
+    "steps": [
+      "Nướng hành tây và gừng trên lửa trực tiếp cho cháy xém đều.",
+      "Chần xương bò với nước sôi 5 phút, vớt ra rửa sạch.",
+      "Đun xương bò với 3 lít nước cùng hành, gừng, hoa hồi, quế 3 tiếng.",
+      "Lọc nước dùng, nêm nước mắm và muối cho vừa ăn.",
+      "Trụng bánh phở, xếp vào bát, chan nước dùng nóng, thêm thịt bò tái và rau."
+    ],
+    "nutrition": {"calories": 520, "protein": 40, "carbs": 55, "fat": 12}
+  },
+  {
+    "id": 2,
+    "title": "Bún Bò Huế",
+    "description": "Bún bò cay đặc trưng miền Trung với nước dùng sả ớt thơm nồng",
+    "cuisine": "Việt Nam",
+    "category": "Súp/Canh",
+    "difficulty": "hard",
+    "prep_time": 30,
+    "cook_time": 150,
+    "servings": 4,
+    "tags": ["bún", "bò", "cay", "Huế", "sả", "chả cua"],
+    "ingredients": ["xương bò", "thịt bò bắp", "chả cua", "bún bò Huế", "sả", "ớt", "mắm ruốc", "hành tím", "huyết", "rau sống"],
+    "steps": [
+      "Nấu xương bò với sả và mắm ruốc trong 2 tiếng rưỡi.",
+      "Thêm huyết cắt miếng và chả cua vào nước dùng.",
+      "Phi sả ớt với dầu màu điều để tạo màu đỏ đặc trưng.",
+      "Trụng bún, xếp thịt, chan nước dùng và ăn kèm rau sống."
+    ],
+    "nutrition": {"calories": 490, "protein": 35, "carbs": 58, "fat": 14}
+  },
+  {
+    "id": 3,
+    "title": "Cơm Tấm Sườn Bì Chả",
+    "description": "Cơm tấm với sườn bì chả truyền thống, chan nước mắm chua ngọt",
+    "cuisine": "Việt Nam",
+    "category": "Cơm",
+    "difficulty": "medium",
+    "prep_time": 60,
+    "cook_time": 30,
+    "servings": 2,
+    "tags": ["cơm tấm", "sườn", "bì", "chả", "cơm"],
+    "ingredients": ["cơm tấm", "sườn heo", "bì heo", "chả trứng", "trứng", "cà chua", "dưa leo", "nước mắm", "đường", "chanh", "tỏi", "ớt"],
+    "steps": [
+      "Ướp sườn với sả, tỏi, nước mắm, đường ít nhất 1 tiếng.",
+      "Nướng sườn trên lửa than hoặc chảo grill đến chín vàng.",
+      "Chưng trứng và chả theo tỉ lệ 3:1 trong khuôn.",
+      "Pha nước mắm chua ngọt với tỏi ớt và chanh.",
+      "Dọn cơm tấm với sườn, bì, chả, dưa leo và chan nước mắm."
+    ],
+    "nutrition": {"calories": 650, "protein": 38, "carbs": 70, "fat": 22}
+  },
+  {
+    "id": 4,
+    "title": "Bánh Mì Thịt Nguội",
+    "description": "Bánh mì Việt Nam giòn tan nhân thịt nguội, pate, rau dưa đa vị",
+    "cuisine": "Việt Nam",
+    "category": "Bánh",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 5,
+    "servings": 1,
+    "tags": ["bánh mì", "thịt nguội", "pate", "ăn sáng", "nhanh"],
+    "ingredients": ["bánh mì", "thịt nguội", "pate", "chả lụa", "dưa leo", "cà rốt chua", "ngò rí", "ớt", "tương đen", "mayonnaise"],
+    "steps": [
+      "Nướng bánh mì giòn vỏ ngoài trong 3–5 phút.",
+      "Phết pate và mayonnaise vào mặt trong bánh.",
+      "Xếp thịt nguội, chả lụa, rau thơm, dưa leo vào bánh.",
+      "Thêm ớt tươi và tương đen theo sở thích."
+    ],
+    "nutrition": {"calories": 420, "protein": 20, "carbs": 45, "fat": 16}
+  },
+  {
+    "id": 5,
+    "title": "Gỏi Cuốn Tôm Thịt",
+    "description": "Gỏi cuốn tươi mát với tôm luộc và thịt heo, chấm tương hoisin",
+    "cuisine": "Việt Nam",
+    "category": "Khai vị",
+    "difficulty": "easy",
+    "prep_time": 20,
+    "cook_time": 10,
+    "servings": 4,
+    "tags": ["gỏi cuốn", "tôm", "thịt heo", "tươi", "ít calo"],
+    "ingredients": ["bánh tráng", "tôm luộc", "thịt heo luộc", "bún", "xà lách", "rau thơm", "tương hoisin", "đậu phộng", "giá đỗ"],
+    "steps": [
+      "Luộc tôm và thịt heo, để nguội, thái mỏng.",
+      "Nhúng bánh tráng vào nước ấm đến khi mềm.",
+      "Xếp xà lách, rau thơm, bún, thịt và tôm lên bánh tráng.",
+      "Cuốn chặt, gấp hai đầu lại.",
+      "Pha tương hoisin với đậu phộng rang và ớt làm nước chấm."
+    ],
+    "nutrition": {"calories": 220, "protein": 18, "carbs": 28, "fat": 5}
+  },
+  {
+    "id": 6,
+    "title": "Bún Thịt Nướng",
+    "description": "Bún với thịt heo nướng sả thơm, ăn kèm rau sống và đồ chua",
+    "cuisine": "Việt Nam",
+    "category": "Bún",
+    "difficulty": "medium",
+    "prep_time": 60,
+    "cook_time": 20,
+    "servings": 2,
+    "tags": ["bún", "thịt nướng", "sả", "bún khô", "miền Nam"],
+    "ingredients": ["bún tươi", "thịt heo cổ", "sả", "tỏi", "nước mắm", "đường", "dầu hào", "giá đỗ", "xà lách", "rau thơm", "đồ chua", "đậu phộng"],
+    "steps": [
+      "Thái thịt heo mỏng, ướp với sả, tỏi, nước mắm, đường 45 phút.",
+      "Nướng thịt trên than hoặc chảo đến cháy cạnh.",
+      "Pha nước mắm chua ngọt với tỏi ớt.",
+      "Xếp bún, rau sống, thịt nướng, chả giò, đậu phộng rang, chan nước mắm."
+    ],
+    "nutrition": {"calories": 480, "protein": 32, "carbs": 55, "fat": 14}
+  },
+  {
+    "id": 7,
+    "title": "Canh Chua Cá",
+    "description": "Canh chua cá điêu hồng đậm đà với me, cà chua và rau dọc mùng",
+    "cuisine": "Việt Nam",
+    "category": "Súp/Canh",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 20,
+    "servings": 4,
+    "tags": ["canh chua", "cá", "me", "cà chua", "miền Nam"],
+    "ingredients": ["cá điêu hồng", "me chua", "cà chua", "dứa", "giá đỗ", "dọc mùng", "hành lá", "ngò om", "nước mắm", "đường", "muối"],
+    "steps": [
+      "Ngâm me với nước ấm 15 phút, lọc lấy nước.",
+      "Đun nước me với dứa và cà chua đến sôi.",
+      "Thêm cá đã làm sạch vào, đun 10 phút.",
+      "Thêm giá đỗ, dọc mùng, nêm nước mắm và đường.",
+      "Tắt bếp, thêm ngò om và hành lá thái nhuyễn."
+    ],
+    "nutrition": {"calories": 250, "protein": 28, "carbs": 20, "fat": 6}
+  },
+  {
+    "id": 8,
+    "title": "Cơm Chiên Dương Châu",
+    "description": "Cơm chiên đặc trưng với tôm, thịt xá xíu, trứng và rau cải",
+    "cuisine": "Hoa",
+    "category": "Cơm",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 15,
+    "servings": 2,
+    "tags": ["cơm chiên", "tôm", "xá xíu", "trứng", "ăn nhanh"],
+    "ingredients": ["cơm nguội", "tôm tươi", "thịt xá xíu", "trứng", "cà rốt", "đậu xanh", "hành lá", "dầu ăn", "nước tương", "muối tiêu"],
+    "steps": [
+      "Phi thơm tỏi băm với dầu nóng.",
+      "Cho tôm và thịt xá xíu vào xào đến chín.",
+      "Tách trứng đẩy sang một bên, đổ cơm vào xào đều.",
+      "Thêm cà rốt, đậu xanh, nêm nước tương và tiêu.",
+      "Cuối cùng thêm hành lá thái nhỏ, đảo đều."
+    ],
+    "nutrition": {"calories": 480, "protein": 25, "carbs": 62, "fat": 14}
+  },
+  {
+    "id": 9,
+    "title": "Thịt Kho Tàu",
+    "description": "Thịt heo ba chỉ kho nước dừa với trứng vịt, đậm đà vị ngọt mặn",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 90,
+    "servings": 4,
+    "tags": ["thịt kho", "ba chỉ", "trứng vịt", "nước dừa", "miền Nam"],
+    "ingredients": ["thịt ba chỉ", "trứng vịt", "nước dừa tươi", "nước mắm", "đường thốt nốt", "tỏi", "ớt", "hành tím"],
+    "steps": [
+      "Cắt thịt heo miếng vuông 3cm, trứng vịt luộc chín bóc vỏ.",
+      "Rang đường thốt nốt với ít nước tạo màu cánh gián.",
+      "Cho thịt vào đảo đều với đường rang.",
+      "Đổ nước dừa tươi xâm xấp, thêm nước mắm, đun lửa vừa.",
+      "Khi thịt mềm thêm trứng vào, đun 30 phút nữa đến khi nước cạn bóng."
+    ],
+    "nutrition": {"calories": 580, "protein": 30, "carbs": 18, "fat": 42}
+  },
+  {
+    "id": 10,
+    "title": "Rau Muống Xào Tỏi",
+    "description": "Rau muống xào tỏi giòn ngon đơn giản, giữ màu xanh đẹp",
+    "cuisine": "Việt Nam",
+    "category": "Rau/Chay",
+    "difficulty": "easy",
+    "prep_time": 5,
+    "cook_time": 8,
+    "servings": 2,
+    "tags": ["rau muống", "xào", "tỏi", "chay", "ăn kiêng", "nhanh"],
+    "ingredients": ["rau muống", "tỏi", "dầu ăn", "nước mắm", "muối", "đường"],
+    "steps": [
+      "Nhặt rau muống bỏ lá vàng, cắt khúc 5cm, rửa sạch ráo nước.",
+      "Phi tỏi bằm vàng thơm với dầu nóng.",
+      "Cho rau muống vào xào lửa to, đảo nhanh tay.",
+      "Nêm muối và ít đường, đảo thêm 1 phút là ăn được."
+    ],
+    "nutrition": {"calories": 90, "protein": 4, "carbs": 8, "fat": 5}
+  },
+  {
+    "id": 11,
+    "title": "Cá Kho Tộ",
+    "description": "Cá lóc kho trong nồi đất với nước mắm và tiêu, thơm béo đậm vị",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 15,
+    "cook_time": 40,
+    "servings": 3,
+    "tags": ["cá kho", "cá lóc", "nồi đất", "miền Nam", "đậm đà"],
+    "ingredients": ["cá lóc", "nước mắm", "đường", "tiêu", "tỏi", "hành tím", "ớt", "dầu màu điều"],
+    "steps": [
+      "Cá lóc cắt khúc, ướp với nước mắm, đường, tiêu 20 phút.",
+      "Cho dầu màu điều và hành tỏi vào nồi đất, phi thơm.",
+      "Xếp cá vào nồi, đậy nắp kho lửa vừa 20 phút.",
+      "Hạ lửa nhỏ, kho tiếp 15–20 phút cho cạn nước, cá thấm gia vị."
+    ],
+    "nutrition": {"calories": 310, "protein": 35, "carbs": 12, "fat": 14}
+  },
+  {
+    "id": 12,
+    "title": "Chả Giò Tôm Thịt",
+    "description": "Chả giò giòn tan nhân tôm thịt và miến, chiên vàng hấp dẫn",
+    "cuisine": "Việt Nam",
+    "category": "Khai vị",
+    "difficulty": "medium",
+    "prep_time": 30,
+    "cook_time": 20,
+    "servings": 4,
+    "tags": ["chả giò", "tôm", "thịt heo", "chiên", "khai vị"],
+    "ingredients": ["bánh tráng chiên", "tôm tươi", "thịt heo xay", "miến", "mộc nhĩ", "cà rốt", "hành lá", "trứng", "nước mắm", "tiêu", "dầu chiên"],
+    "steps": [
+      "Ngâm miến và mộc nhĩ cho mềm, cắt nhỏ.",
+      "Trộn tôm thịt với miến, mộc nhĩ, cà rốt, trứng và gia vị.",
+      "Cuốn nhân vào bánh tráng chiên thành cuốn nhỏ.",
+      "Chiên ngập dầu lửa vừa đến vàng giòn đều.",
+      "Ăn kèm với nước mắm chua ngọt và rau sống."
+    ],
+    "nutrition": {"calories": 350, "protein": 18, "carbs": 35, "fat": 16}
+  },
+  {
+    "id": 13,
+    "title": "Miến Gà",
+    "description": "Miến nấu nước dùng gà trong với đậu phụ và nấm hương",
+    "cuisine": "Việt Nam",
+    "category": "Súp/Canh",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 60,
+    "servings": 4,
+    "tags": ["miến", "gà", "thanh đạm", "bổ dưỡng"],
+    "ingredients": ["gà ta", "miến", "nấm hương", "hành tây", "gừng", "hành lá", "ngò rí", "nước mắm", "tiêu"],
+    "steps": [
+      "Luộc gà với hành tây và gừng trong 45 phút, vớt ra xé sợi.",
+      "Lọc nước dùng gà, nêm nước mắm và tiêu.",
+      "Ngâm miến mềm, trần sơ qua nước sôi.",
+      "Ngâm nấm hương mềm, phi thơm với ít dầu.",
+      "Cho miến vào bát, thêm gà xé, nấm, chan nước dùng nóng."
+    ],
+    "nutrition": {"calories": 380, "protein": 32, "carbs": 42, "fat": 9}
+  },
+  {
+    "id": 14,
+    "title": "Bánh Xèo Miền Nam",
+    "description": "Bánh xèo giòn rụm nhân tôm thịt và giá, ăn kèm rau sống chấm tương",
+    "cuisine": "Việt Nam",
+    "category": "Bánh",
+    "difficulty": "medium",
+    "prep_time": 30,
+    "cook_time": 20,
+    "servings": 4,
+    "tags": ["bánh xèo", "giòn", "tôm", "thịt heo", "miền Nam"],
+    "ingredients": ["bột bánh xèo", "tôm tươi", "thịt heo ba chỉ", "giá đỗ", "hành tây", "nước cốt dừa", "nghệ", "dầu ăn", "rau sống", "tương hoisin"],
+    "steps": [
+      "Trộn bột với nước cốt dừa, nghệ và hành lá cho đều.",
+      "Ướp tôm thịt với nước mắm và tiêu.",
+      "Đun chảo nóng, thêm dầu nhiều, cho nhân vào xào nhanh.",
+      "Đổ bột mỏng lên, đậy nắp 2 phút, mở nắp cho giòn.",
+      "Gấp đôi bánh, ăn kèm rau sống và tương hoisin."
+    ],
+    "nutrition": {"calories": 420, "protein": 22, "carbs": 48, "fat": 16}
+  },
+  {
+    "id": 15,
+    "title": "Bò Lúc Lắc",
+    "description": "Thịt bò phi lê xào lăn bơ tỏi, ăn kèm dưa leo cà chua",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 10,
+    "servings": 2,
+    "tags": ["bò", "xào", "lúc lắc", "bơ", "nhà hàng"],
+    "ingredients": ["thịt bò phi lê", "bơ", "tỏi", "hành tây", "ớt chuông", "dưa leo", "cà chua", "nước tương", "hào dầu", "tiêu xanh"],
+    "steps": [
+      "Cắt thịt bò khối vuông, ướp với nước tương, hào dầu, tiêu 15 phút.",
+      "Đun chảo nóng già với bơ, phi tỏi thơm.",
+      "Cho thịt bò vào xào lửa to, lắc chảo nhanh cho bò chín tái.",
+      "Thêm hành tây và ớt chuông, xào thêm 1 phút.",
+      "Bày dưa leo cà chua ra đĩa, xếp bò lúc lắc lên trên."
+    ],
+    "nutrition": {"calories": 420, "protein": 38, "carbs": 12, "fat": 24}
+  },
+  {
+    "id": 16,
+    "title": "Trứng Chiên Cà Chua",
+    "description": "Trứng chiên xào cà chua ngọt, món gia đình đơn giản và ngon",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "easy",
+    "prep_time": 5,
+    "cook_time": 10,
+    "servings": 2,
+    "tags": ["trứng", "cà chua", "xào", "đơn giản", "nhanh", "ăn kiêng"],
+    "ingredients": ["trứng gà", "cà chua", "hành lá", "dầu ăn", "nước mắm", "đường", "muối"],
+    "steps": [
+      "Cà chua bổ múi cau, hành lá cắt nhỏ.",
+      "Đánh trứng với ít muối, chiên vàng rồi gắp ra.",
+      "Phi hành thơm, cho cà chua vào xào đến mềm.",
+      "Thêm đường và nước mắm, cho trứng vào đảo nhẹ.",
+      "Tắt bếp, rắc hành lá xanh lên."
+    ],
+    "nutrition": {"calories": 220, "protein": 14, "carbs": 10, "fat": 14}
+  },
+  {
+    "id": 17,
+    "title": "Cháo Gà",
+    "description": "Cháo gà nấu từ gạo tẻ với nước dùng gà, ăn kèm gừng thái chỉ",
+    "cuisine": "Việt Nam",
+    "category": "Cháo",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 45,
+    "servings": 4,
+    "tags": ["cháo", "gà", "ốm đau", "nhẹ nhàng", "bổ dưỡng"],
+    "ingredients": ["gạo tẻ", "gà ta", "gừng", "hành tím", "hành lá", "ngò rí", "nước mắm", "muối", "tiêu"],
+    "steps": [
+      "Luộc gà với gừng đập dập và muối 30 phút, xé sợi.",
+      "Nấu gạo với nước dùng gà cho nở mềm.",
+      "Nêm nước mắm và muối vừa miệng.",
+      "Múc cháo ra bát, thêm gà xé, gừng thái chỉ, hành lá và tiêu."
+    ],
+    "nutrition": {"calories": 310, "protein": 28, "carbs": 38, "fat": 6}
+  },
+  {
+    "id": 18,
+    "title": "Gà Nướng Sả Ớt",
+    "description": "Gà nướng sả ớt thơm vị Việt Nam, da giòn vàng hấp dẫn",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 60,
+    "cook_time": 45,
+    "servings": 4,
+    "tags": ["gà nướng", "sả", "ớt", "nướng than", "tiệc"],
+    "ingredients": ["gà nguyên con", "sả", "ớt", "tỏi", "nước mắm", "mật ong", "dầu hào", "sa tế"],
+    "steps": [
+      "Gà chặt miếng, ướp với hỗn hợp sả ớt tỏi xay nhuyễn ít nhất 2 tiếng.",
+      "Thêm mật ong, dầu hào, sa tế vào ướp.",
+      "Nướng gà trên than hoa lửa vừa, quét thêm nước ướp mỗi 10 phút.",
+      "Nướng đến khi da vàng giòn đều, khoảng 40 phút."
+    ],
+    "nutrition": {"calories": 380, "protein": 42, "carbs": 8, "fat": 20}
+  },
+  {
+    "id": 19,
+    "title": "Tôm Xào Chua Ngọt",
+    "description": "Tôm xào sốt chua ngọt màu đỏ bắt mắt với dứa và ớt chuông",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 15,
+    "servings": 2,
+    "tags": ["tôm", "chua ngọt", "xào", "nhanh", "ngon"],
+    "ingredients": ["tôm sú", "dứa", "ớt chuông đỏ", "ớt chuông xanh", "hành tây", "tỏi", "tương cà", "giấm", "đường", "nước tương", "bột bắp"],
+    "steps": [
+      "Tôm bóc vỏ, rạch lưng lấy chỉ đen, ướp muối tiêu.",
+      "Pha sốt: tương cà, giấm, đường, nước tương, bột bắp với nước.",
+      "Phi thơm tỏi, cho tôm vào xào chín đỏ.",
+      "Thêm dứa, ớt chuông, hành tây, đổ sốt vào đảo đều.",
+      "Đun đến khi sốt sệt, tắt bếp."
+    ],
+    "nutrition": {"calories": 280, "protein": 26, "carbs": 32, "fat": 6}
+  },
+  {
+    "id": 20,
+    "title": "Súp Bí Đỏ Kem",
+    "description": "Súp bí đỏ mịn béo với kem tươi và hạt bí rang, ăn kèm bánh mì",
+    "cuisine": "Âu",
+    "category": "Súp/Canh",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 30,
+    "servings": 4,
+    "tags": ["bí đỏ", "súp kem", "chay", "ăn kiêng", "bổ dưỡng"],
+    "ingredients": ["bí đỏ", "kem tươi", "hành tây", "tỏi", "nước dùng gà/rau", "bơ", "muối", "tiêu", "hạt bí rang"],
+    "steps": [
+      "Hành tây và tỏi xắt thô, phi vàng nhạt với bơ.",
+      "Cho bí đỏ đã gọt vỏ cắt miếng vào xào đều.",
+      "Đổ nước dùng vào đun sôi, nấu đến khi bí mềm.",
+      "Xay nhuyễn hỗn hợp bằng máy xay tay.",
+      "Thêm kem tươi, nêm muối tiêu, trang trí với hạt bí rang."
+    ],
+    "nutrition": {"calories": 220, "protein": 6, "carbs": 28, "fat": 12}
+  },
+  {
+    "id": 21,
+    "title": "Đậu Hũ Sốt Cà Chua",
+    "description": "Đậu hũ chiên sốt cà chua ngọt, món chay đơn giản đầy đủ protein",
+    "cuisine": "Việt Nam",
+    "category": "Rau/Chay",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 15,
+    "servings": 2,
+    "tags": ["đậu hũ", "chay", "cà chua", "protein", "ăn kiêng"],
+    "ingredients": ["đậu hũ cứng", "cà chua", "hành lá", "tỏi", "nước mắm", "đường", "dầu ăn"],
+    "steps": [
+      "Đậu hũ cắt khối vuông, thấm khô, chiên vàng.",
+      "Phi tỏi thơm, cho cà chua thái nhỏ vào xào mềm.",
+      "Nêm nước mắm và đường, thêm ít nước.",
+      "Cho đậu hũ chiên vào đảo nhẹ, đun sệt sốt.",
+      "Rắc hành lá xanh lên trước khi ăn."
+    ],
+    "nutrition": {"calories": 200, "protein": 14, "carbs": 14, "fat": 10}
+  },
+  {
+    "id": 22,
+    "title": "Cơm Gà Hải Nam",
+    "description": "Cơm gà Hải Nam nấu nước luộc gà thơm mềm, chấm tương gừng",
+    "cuisine": "Hoa",
+    "category": "Cơm",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 60,
+    "servings": 4,
+    "tags": ["cơm gà", "Hải Nam", "Singapore", "gừng", "thanh đạm"],
+    "ingredients": ["gà ta", "gạo tẻ", "gừng", "tỏi", "hành lá", "dầu mè", "nước tương", "ớt", "nước dùng gà"],
+    "steps": [
+      "Luộc gà nguyên con với gừng và muối 45 phút.",
+      "Vớt gà ra ngâm nước đá cho da giòn, xé hoặc chặt miếng.",
+      "Xào gạo với tỏi và ít dầu, rồi nấu với nước luộc gà.",
+      "Pha tương gừng: gừng bào nhuyễn, tỏi, nước tương, dầu mè.",
+      "Dọn cơm, gà, dưa leo và nước chấm."
+    ],
+    "nutrition": {"calories": 520, "protein": 38, "carbs": 60, "fat": 14}
+  },
+  {
+    "id": 23,
+    "title": "Bắp Cải Xào Thịt Bò",
+    "description": "Bắp cải xào thịt bò mỏng với nước tương và hào dầu, giòn ngon",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 10,
+    "servings": 2,
+    "tags": ["bắp cải", "thịt bò", "xào", "ăn kiêng", "nhanh"],
+    "ingredients": ["bắp cải", "thịt bò", "tỏi", "gừng", "nước tương", "dầu hào", "bột bắp", "dầu ăn", "muối tiêu"],
+    "steps": [
+      "Thịt bò thái mỏng, ướp nước tương, bột bắp và tiêu.",
+      "Bắp cải bổ múi, cắt miếng vừa ăn.",
+      "Phi tỏi và gừng thơm với dầu nóng.",
+      "Cho thịt bò vào xào chín nhanh trên lửa to.",
+      "Thêm bắp cải, dầu hào, đảo đều 3–4 phút."
+    ],
+    "nutrition": {"calories": 290, "protein": 24, "carbs": 16, "fat": 14}
+  },
+  {
+    "id": 24,
+    "title": "Gà Hấp Gừng Sả",
+    "description": "Gà hấp gừng sả mềm tự nhiên, ít dầu mỡ, phù hợp ăn sạch",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 30,
+    "servings": 4,
+    "tags": ["gà hấp", "gừng", "sả", "eat clean", "healthy", "ít calo"],
+    "ingredients": ["gà ta", "gừng", "sả", "hành tím", "nước mắm", "muối", "tiêu", "dầu mè"],
+    "steps": [
+      "Gà chặt miếng, ướp với gừng thái sợi, sả đập dập, muối và tiêu.",
+      "Xếp gà vào khay, thêm hành tím và sả lên trên.",
+      "Hấp lửa vừa khoảng 30 phút đến khi gà chín.",
+      "Cho dầu mè vào nước mắm, rưới lên gà trước khi dọn."
+    ],
+    "nutrition": {"calories": 290, "protein": 38, "carbs": 4, "fat": 12}
+  },
+  {
+    "id": 25,
+    "title": "Salad Gà Rau Củ",
+    "description": "Salad gà ức hấp với rau xà lách, cà chua, táo và sốt mật ong mù tạt",
+    "cuisine": "Âu",
+    "category": "Salad",
+    "difficulty": "easy",
+    "prep_time": 15,
+    "cook_time": 15,
+    "servings": 2,
+    "tags": ["salad", "gà ức", "ăn kiêng", "eat clean", "ít calo", "giảm cân"],
+    "ingredients": ["ức gà", "xà lách", "cà chua bi", "táo", "dưa leo", "mật ong", "mù tạt Dijon", "giấm táo", "dầu ô liu", "muối tiêu"],
+    "steps": [
+      "Luộc hoặc hấp ức gà với muối và tiêu đến chín, để nguội xé sợi.",
+      "Pha sốt: mật ong, mù tạt Dijon, giấm táo, dầu ô liu, muối tiêu.",
+      "Xếp xà lách, cà chua bi, táo thái lát, dưa leo vào bát.",
+      "Thêm gà xé lên trên, rưới sốt và trộn đều."
+    ],
+    "nutrition": {"calories": 280, "protein": 32, "carbs": 18, "fat": 10}
+  },
+  {
+    "id": 26,
+    "title": "Mì Xào Hải Sản",
+    "description": "Mì trứng xào với tôm mực và rau cải, sốt dầu hào thơm ngon",
+    "cuisine": "Hoa",
+    "category": "Mì/Bún",
+    "difficulty": "medium",
+    "prep_time": 15,
+    "cook_time": 15,
+    "servings": 2,
+    "tags": ["mì xào", "hải sản", "tôm", "mực", "nhanh"],
+    "ingredients": ["mì trứng", "tôm tươi", "mực", "ngao", "cải xanh", "hành tây", "tỏi", "gừng", "dầu hào", "nước tương", "bột bắp", "dầu mè"],
+    "steps": [
+      "Luộc mì vừa chín tới, xả nước lạnh ráo.",
+      "Phi thơm tỏi gừng, xào hải sản đến chín.",
+      "Cho hành tây và cải xanh vào xào đến héo.",
+      "Thêm mì vào, cho dầu hào và nước tương, đảo đều.",
+      "Rưới dầu mè lên trước khi ăn."
+    ],
+    "nutrition": {"calories": 440, "protein": 30, "carbs": 52, "fat": 12}
+  },
+  {
+    "id": 27,
+    "title": "Thịt Heo Kho Gừng",
+    "description": "Thịt heo ba chỉ kho gừng đậm vị, thơm cay nhẹ ăn với cơm trắng",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 15,
+    "cook_time": 45,
+    "servings": 3,
+    "tags": ["thịt kho", "gừng", "ba chỉ", "đậm đà"],
+    "ingredients": ["thịt ba chỉ", "gừng tươi", "nước mắm", "đường", "nước màu", "tỏi", "hành tím"],
+    "steps": [
+      "Thịt ba chỉ cắt miếng, chần sơ qua nước sôi.",
+      "Phi hành tỏi vàng, cho thịt vào xào đến săn.",
+      "Cho gừng thái sợi, nước màu và nước mắm vào.",
+      "Thêm ít nước, đun lửa vừa 30 phút đến mềm và cạn nước."
+    ],
+    "nutrition": {"calories": 480, "protein": 28, "carbs": 10, "fat": 36}
+  },
+  {
+    "id": 28,
+    "title": "Canh Khoai Lang",
+    "description": "Canh khoai lang nấu với sườn, ngọt tự nhiên không cần nêm nhiều",
+    "cuisine": "Việt Nam",
+    "category": "Súp/Canh",
+    "difficulty": "easy",
+    "prep_time": 10,
+    "cook_time": 30,
+    "servings": 4,
+    "tags": ["canh", "khoai lang", "sườn", "thanh đạm", "ăn kiêng"],
+    "ingredients": ["khoai lang", "sườn heo", "hành lá", "nước mắm", "muối"],
+    "steps": [
+      "Chần sườn qua nước sôi, vớt ra rửa sạch.",
+      "Đun sườn với 1,5 lít nước trong 20 phút.",
+      "Khoai lang gọt vỏ, cắt khúc, thêm vào nồi đun tiếp 10 phút.",
+      "Nêm muối và nước mắm, thêm hành lá xanh."
+    ],
+    "nutrition": {"calories": 280, "protein": 20, "carbs": 32, "fat": 8}
+  },
+  {
+    "id": 29,
+    "title": "Cà Ri Gà",
+    "description": "Cà ri gà nước cốt dừa thơm béo ăn với bánh mì hoặc cơm",
+    "cuisine": "Việt Nam",
+    "category": "Món chính",
+    "difficulty": "medium",
+    "prep_time": 20,
+    "cook_time": 40,
+    "servings": 4,
+    "tags": ["cà ri", "gà", "nước cốt dừa", "khoai", "ăn kèm bánh mì"],
+    "ingredients": ["gà", "khoai tây", "cà rốt", "nước cốt dừa", "bột cà ri", "sả", "hành tím", "tỏi", "ớt", "nước mắm", "đường"],
+    "steps": [
+      "Gà chặt miếng, ướp bột cà ri và muối 20 phút.",
+      "Phi sả hành tỏi thơm, cho gà vào xào đến săn.",
+      "Thêm khoai tây và cà rốt, đổ nước cốt dừa và ít nước.",
+      "Đun lửa vừa 30 phút đến khi gà và khoai mềm.",
+      "Nêm nước mắm và đường vừa ăn."
+    ],
+    "nutrition": {"calories": 440, "protein": 32, "carbs": 36, "fat": 20}
+  },
+  {
+    "id": 30,
+    "title": "Cải Bó Xôi Xào Tỏi",
+    "description": "Cải bó xôi xào tỏi nhanh, giữ màu xanh và dinh dưỡng",
+    "cuisine": "Việt Nam",
+    "category": "Rau/Chay",
+    "difficulty": "easy",
+    "prep_time": 5,
+    "cook_time": 5,
+    "servings": 2,
+    "tags": ["cải bó xôi", "spinach", "xào", "chay", "healthy", "ăn kiêng", "ít calo"],
+    "ingredients": ["cải bó xôi (spinach)", "tỏi", "dầu ô liu", "muối", "tiêu", "ớt khô"],
+    "steps": [
+      "Cải bó xôi rửa sạch, để ráo.",
+      "Đun dầu ô liu nóng, phi tỏi thái lát và ớt khô.",
+      "Cho cải vào xào lửa to, đảo nhanh 2–3 phút.",
+      "Nêm muối và tiêu, tắt bếp ngay khi cải vừa héo."
+    ],
+    "nutrition": {"calories": 80, "protein": 4, "carbs": 6, "fat": 5}
+  }
+]

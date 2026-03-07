@@ -1,16 +1,19 @@
 """Meal plan router — AI-powered weekly meal planning via Gemini."""
+import time
+from datetime import date, timedelta
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from typing import List, Optional
-from pydantic import BaseModel, Field
-from datetime import date, timedelta
 
 from app.core.database import get_session
 from app.core.security import get_current_user_id
 from app.models.meal_plan import MealPlan
 from app.schemas.meal_plan import MealPlanResponse
-from app.services.gemini import gemini_service
+from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/mealplan", tags=["Meal Planning"])
 
@@ -35,11 +38,22 @@ async def generate_meal_plan(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"goal must be one of: {', '.join(VALID_GOALS)}",
         )
+
+    logger.info(
+        "router:generate_meal_plan | goal={} days={} calories_target={}",
+        request.goal, request.days, request.calories_target,
+    )
+    t0 = time.perf_counter()
+
     try:
-        ai_result = await gemini_service.generate_meal_plan(
+        ai_result = await llm_provider.generate_meal_plan(
             request.goal, request.days, request.calories_target
         )
     except Exception as e:
+        logger.error(
+            "router:generate_meal_plan | llm_error={} latency={}ms",
+            str(e)[:200], round((time.perf_counter() - t0) * 1000, 1),
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"AI service error: {str(e)}",
@@ -61,7 +75,14 @@ async def generate_meal_plan(
     await session.commit()
     await session.refresh(meal_plan)
 
-    # Return AI plan + DB id together
+    plan_days = len(ai_result.get("plan", []))
+    nutrition = ai_result.get("nutrition_summary", {})
+    latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+    logger.info(
+        "router:generate_meal_plan | ok db_id={} plan_days={} avg_calories={} latency={}ms",
+        meal_plan.id, plan_days, nutrition.get("avg_calories", "?"), latency_ms,
+    )
+
     return {
         "id": meal_plan.id,
         "goal": request.goal,
@@ -77,10 +98,16 @@ async def get_meal_plans(
     session: AsyncSession = Depends(get_session),
 ) -> List[MealPlanResponse]:
     """List saved meal plans for the current user."""
+    logger.debug("db:get_meal_plans | fetching plans")
+    t0 = time.perf_counter()
     result = await session.execute(
         select(MealPlan).where(MealPlan.user_id == user_id)
     )
     plans = result.scalars().all()
+    logger.info(
+        "db:get_meal_plans | count={} latency={}ms",
+        len(plans), round((time.perf_counter() - t0) * 1000, 1),
+    )
     return [
         MealPlanResponse(
             id=p.id,

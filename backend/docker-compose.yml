@@ -12,4 +12,19 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app/app
+      - ./logs:/app/logs
+    depends_on:
+      - redis
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:7-alpine
+    container_name: chefgpt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  redis_data:
