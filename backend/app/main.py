@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.database import create_db_and_tables
 from app.core.logging_config import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
-from app.routers import auth, recipes, chat, vision, meal_plan, social, shopping
+from app.routers import auth, recipes, chat, vision, meal_plan, social, shopping, recipes_search
 
 
 @asynccontextmanager
@@ -18,6 +18,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting ChefGPT API | provider={}", settings.llm_provider)
     create_db_and_tables()
     logger.info("Database tables ready")
+    # Initialize RAG index (loads community recipes + embeddings)
+    from app.services.rag import rag_service
+    await rag_service.initialize()
+    logger.info("RAG index ready | recipes={} ready={}", rag_service.recipe_count, rag_service.ready)
     yield
     logger.info("Shutting down ChefGPT API")
 
@@ -51,9 +55,12 @@ app.include_router(meal_plan.router)     # POST /mealplan/generate
 app.include_router(chat.router)          # POST /chat/query
 app.include_router(auth.router)
 
+# Community recipes + RAG search
+app.include_router(recipes_search.router)  # GET /community-recipes
+
 # Mock routes (demo data)
-app.include_router(social.router)        # CRUD /posts
-app.include_router(shopping.router)      # GET /shopping-list/mock
+app.include_router(social.router)          # CRUD /posts
+app.include_router(shopping.router)        # GET /shopping-list/mock
 
 
 @app.get("/")

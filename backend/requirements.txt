@@ -17,28 +17,32 @@ python-dotenv==1.0.0
 pydantic-settings==2.1.0
 
 # Supabase (Auth only)
-supabase==2.3.4
+# 2.15.3+ uses httpx>=0.28 (compatible with google-genai==1.66.0)
+supabase==2.15.3
 
 # AI — Gemini 2.5 Flash (Google AI Studio free tier)
-google-genai>=1.0.0
+# Pinned to avoid slow pip backtracking during install
+google-genai==1.66.0
 
 # Image processing (for Gemini Vision multipart upload)
 pillow==10.2.0
 
-# HTTP Client (version constrained by supabase transitive dep)
-httpx>=0.24,<0.26
-
 # Utilities
-pydantic==2.5.3
+# httpx: NOT pinned here — let supabase/google-genai pick compatible version
+# pydantic: use >= to allow google-genai to request newer versions
+pydantic>=2.5.3
 email-validator==2.1.0
 python-dateutil==2.8.2
 
 # Cache
 redis==5.0.1
 
-# Multi-provider LLM support (optional — install based on LLM_PROVIDER)
-openai>=1.30.0
-anthropic>=0.30.0
+# RAG — in-memory vector similarity (no external vector DB needed)
+numpy>=1.26.0
+
+# Multi-provider LLM support (optional — uncomment based on LLM_PROVIDER)
+# openai>=1.30.0       # pip install openai   — needed if LLM_PROVIDER=openai
+# anthropic>=0.30.0    # pip install anthropic — needed if LLM_PROVIDER=anthropic
 
 # Logging
 loguru==0.7.2

@@ -61,6 +61,7 @@ class GeminiLLM(BaseLLM):
         self, ingredients: list[str], filters: list[str] | None = None
     ) -> dict:
         from app.core.config import settings
+        from app.services.rag import rag_service
 
         cache_key = CacheService.make_key(
             "recipes", ingredients=sorted(ingredients), filters=sorted(filters or [])
@@ -70,13 +71,17 @@ class GeminiLLM(BaseLLM):
             logger.debug("cache hit {}", cache_key)
             return cached
 
-        filters_str = ", ".join(filters) if filters else "không có"
-        prompt = f"""Bạn là đầu bếp chuyên nghiệp người Việt.
+        # RAG: retrieve similar community recipes as grounding context
+        rag_context = await rag_service.get_context(ingredients, filters or [])
 
+        filters_str = ", ".join(filters) if filters else "không có"
+        rag_block = f"\n{rag_context}\n" if rag_context else ""
+        prompt = f"""Bạn là đầu bếp chuyên nghiệp người Việt.
+{rag_block}
 Nguyên liệu có sẵn: {", ".join(ingredients)}
 Yêu cầu/sở thích: {filters_str}
 
-Gợi ý 3 món ăn có thể nấu từ các nguyên liệu trên.
+Gợi ý 3 món ăn có thể nấu từ các nguyên liệu trên (tham khảo công thức cộng đồng ở trên nếu phù hợp, nhưng hãy sáng tạo và điều chỉnh theo nguyên liệu hiện có).
 Trả về JSON với cấu trúc sau (không có text ngoài JSON):
 
 {{
