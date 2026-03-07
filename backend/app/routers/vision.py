@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 
 from app.core.config import settings
 from app.core.security import get_current_user_id
-from app.services.gemini import gemini_service
+from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/ingredients", tags=["Vision"])
 
@@ -32,7 +32,7 @@ async def recognize_ingredients(
             detail="Image too large (max 10MB)",
         )
     try:
-        return await gemini_service.recognize_ingredients(image_bytes)
+        return await llm_provider.recognize_ingredients(image_bytes)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

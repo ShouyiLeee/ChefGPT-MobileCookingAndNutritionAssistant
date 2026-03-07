@@ -9,7 +9,7 @@ from datetime import datetime
 from app.core.database import get_session
 from app.core.security import get_current_user_id
 from app.models.chat import ChatSession, ChatMessage
-from app.services.gemini import gemini_service
+from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -72,7 +72,7 @@ async def send_message(
 
     # Call Gemini
     try:
-        reply = await gemini_service.chat(request.message, history)
+        reply = await llm_provider.chat(request.message, history)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

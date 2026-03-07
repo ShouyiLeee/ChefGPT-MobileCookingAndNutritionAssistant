@@ -10,7 +10,7 @@ from app.core.database import get_session
 from app.core.security import get_current_user_id
 from app.models.meal_plan import MealPlan
 from app.schemas.meal_plan import MealPlanResponse
-from app.services.gemini import gemini_service
+from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/mealplan", tags=["Meal Planning"])
 
@@ -36,7 +36,7 @@ async def generate_meal_plan(
             detail=f"goal must be one of: {', '.join(VALID_GOALS)}",
         )
     try:
-        ai_result = await gemini_service.generate_meal_plan(
+        ai_result = await llm_provider.generate_meal_plan(
             request.goal, request.days, request.calories_target
         )
     except Exception as e:

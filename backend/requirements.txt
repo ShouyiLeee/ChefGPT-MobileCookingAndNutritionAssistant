@@ -33,6 +33,13 @@ pydantic==2.5.3
 email-validator==2.1.0
 python-dateutil==2.8.2
 
+# Cache
+redis==5.0.1
+
+# Multi-provider LLM support (optional — install based on LLM_PROVIDER)
+openai>=1.30.0
+anthropic>=0.30.0
+
 # Logging
 loguru==0.7.2
 

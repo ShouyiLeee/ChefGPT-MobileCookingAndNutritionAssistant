@@ -9,7 +9,7 @@ from app.core.database import get_session
 from app.core.security import get_current_user_id
 from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeListResponse
 from app.models.recipe import Recipe
-from app.services.gemini import gemini_service
+from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
 
@@ -33,7 +33,7 @@ async def suggest_recipes(
             detail="At least one ingredient is required",
         )
     try:
-        return await gemini_service.suggest_recipes(
+        return await llm_provider.suggest_recipes(
             request.ingredients, request.filters or []
         )
     except Exception as e:

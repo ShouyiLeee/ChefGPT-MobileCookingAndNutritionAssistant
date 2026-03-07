@@ -42,6 +42,24 @@ class Settings(BaseSettings):
     # Gemini 2.5 Flash (Google AI Studio — free tier)
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
+    # Multiple keys for rotation — comma-separated. Falls back to gemini_api_key if empty.
+    gemini_api_keys: str = ""
+
+    # LLM Provider — "gemini" | "openai" | "anthropic"
+    llm_provider: str = "gemini"
+
+    # OpenAI (optional — set llm_provider=openai)
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+
+    # Anthropic (optional — set llm_provider=anthropic)
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-6"
+
+    # Redis
+    redis_url: str = "redis://localhost:6379/0"
+    cache_ttl_recipes: int = 3600    # 1 hour
+    cache_ttl_meal_plans: int = 1800  # 30 minutes
 
     # File Storage
     max_upload_size: int = 10_485_760  # 10MB
@@ -54,8 +72,18 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.cors_origins.split(",")]
 
+    @property
+    def gemini_keys_list(self) -> List[str]:
+        """Return list of Gemini API keys for rotation."""
+        if self.gemini_api_keys:
+            return [k.strip() for k in self.gemini_api_keys.split(",") if k.strip()]
+        if self.gemini_api_key:
+            return [self.gemini_api_key]
+        return []
+
     # Logging
     log_level: str = "INFO"
+    log_file: str = "logs/chefgpt.log"
 
 
 # Global settings instance
