@@ -1,21 +1,23 @@
 """Social router — real social feed with posts, likes, and comments."""
 import json
+import time
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.core.database import get_session
 from app.core.security import get_current_user_id
-from app.models.social import Post, Comment, Like
+from app.models.social import Comment, Like, Post
 from app.models.user import Profile
-from app.schemas.social import PostCreate, PostResponse, CommentCreate, CommentResponse
+from app.schemas.social import CommentCreate, CommentResponse, PostCreate, PostResponse
 
 router = APIRouter(prefix="/posts", tags=["Social"])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
 
 async def _build_post_response(
     post: Post, current_user_id: str, session: AsyncSession
@@ -52,7 +54,6 @@ async def _build_post_response(
 
 # ── Feed ──────────────────────────────────────────────────────────────────────
 
-
 @router.get("", response_model=dict)
 async def get_posts(
     page: int = 1,
@@ -61,6 +62,8 @@ async def get_posts(
     session: AsyncSession = Depends(get_session),
 ):
     """Get paginated social feed (newest first)."""
+    logger.debug("db:get_posts | page={} limit={}", page, limit)
+    t0 = time.perf_counter()
     offset = (page - 1) * limit
     q = (
         select(Post)
@@ -76,11 +79,15 @@ async def get_posts(
         r = await _build_post_response(p, current_user_id, session)
         responses.append(r.model_dump())
 
+    logger.info(
+        "db:get_posts | page={} posts_returned={} has_more={} latency={}ms",
+        page, len(posts), len(posts) == limit,
+        round((time.perf_counter() - t0) * 1000, 1),
+    )
     return {"posts": responses, "page": page, "has_more": len(posts) == limit}
 
 
 # ── Create post ───────────────────────────────────────────────────────────────
-
 
 @router.post("", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
@@ -89,6 +96,11 @@ async def create_post(
     session: AsyncSession = Depends(get_session),
 ):
     """Create a new post."""
+    logger.info(
+        "db:create_post | content_len={} image_count={}",
+        len(body.content), len(body.image_urls or []),
+    )
+    t0 = time.perf_counter()
     image_json = json.dumps(body.image_urls) if body.image_urls else None
     post = Post(
         author_id=current_user_id,
@@ -99,11 +111,14 @@ async def create_post(
     session.add(post)
     await session.commit()
     await session.refresh(post)
+    logger.info(
+        "db:create_post | ok post_id={} latency={}ms",
+        post.id, round((time.perf_counter() - t0) * 1000, 1),
+    )
     return await _build_post_response(post, current_user_id, session)
 
 
 # ── Delete post ───────────────────────────────────────────────────────────────
-
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
@@ -112,16 +127,22 @@ async def delete_post(
     session: AsyncSession = Depends(get_session),
 ):
     """Delete own post (author only)."""
+    logger.info("db:delete_post | post_id={}", post_id)
+    t0 = time.perf_counter()
     q = select(Post).where(Post.id == post_id, Post.author_id == current_user_id)
     post = (await session.execute(q)).scalar_one_or_none()
     if not post:
+        logger.warning("db:delete_post | not_found_or_forbidden post_id={}", post_id)
         raise HTTPException(status_code=404, detail="Post not found or not authorized")
     await session.delete(post)
     await session.commit()
+    logger.info(
+        "db:delete_post | ok post_id={} latency={}ms",
+        post_id, round((time.perf_counter() - t0) * 1000, 1),
+    )
 
 
 # ── Like / unlike ─────────────────────────────────────────────────────────────
-
 
 @router.post("/{post_id}/like", response_model=dict)
 async def toggle_like(
@@ -130,6 +151,7 @@ async def toggle_like(
     session: AsyncSession = Depends(get_session),
 ):
     """Toggle like on a post. Returns {liked: bool, like_count: int}."""
+    t0 = time.perf_counter()
     post = (await session.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -148,11 +170,16 @@ async def toggle_like(
 
     session.add(post)
     await session.commit()
+
+    logger.info(
+        "db:toggle_like | post_id={} action={} new_like_count={} latency={}ms",
+        post_id, "liked" if liked else "unliked", post.like_count,
+        round((time.perf_counter() - t0) * 1000, 1),
+    )
     return {"liked": liked, "like_count": post.like_count}
 
 
 # ── Comments ──────────────────────────────────────────────────────────────────
-
 
 @router.get("/{post_id}/comments", response_model=dict)
 async def get_comments(
@@ -161,6 +188,8 @@ async def get_comments(
     session: AsyncSession = Depends(get_session),
 ):
     """Get top-level comments for a post."""
+    logger.debug("db:get_comments | post_id={}", post_id)
+    t0 = time.perf_counter()
     q = (
         select(Comment)
         .where(Comment.post_id == post_id, Comment.parent_id == None)  # noqa: E711
@@ -184,6 +213,11 @@ async def get_comments(
                 created_at=c.created_at,
             ).model_dump()
         )
+
+    logger.info(
+        "db:get_comments | post_id={} count={} latency={}ms",
+        post_id, len(result), round((time.perf_counter() - t0) * 1000, 1),
+    )
     return {"comments": result}
 
 
@@ -199,6 +233,11 @@ async def create_comment(
     session: AsyncSession = Depends(get_session),
 ):
     """Add a comment to a post."""
+    logger.info(
+        "db:create_comment | post_id={} content_len={} parent_id={}",
+        post_id, len(body.content), body.parent_id,
+    )
+    t0 = time.perf_counter()
     post = (await session.execute(select(Post).where(Post.id == post_id))).scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -219,6 +258,10 @@ async def create_comment(
     profile_q = select(Profile).where(Profile.user_id == current_user_id)
     profile = (await session.execute(profile_q)).scalar_one_or_none()
 
+    logger.info(
+        "db:create_comment | ok comment_id={} post_id={} latency={}ms",
+        comment.id, post_id, round((time.perf_counter() - t0) * 1000, 1),
+    )
     return CommentResponse(
         id=comment.id,
         user_id=comment.user_id,
