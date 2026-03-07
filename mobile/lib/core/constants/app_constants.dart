@@ -2,8 +2,8 @@ class AppConstants {
   // API Configuration — đổi theo môi trường chạy:
   // Flutter web (Chrome):        http://localhost:8000
   // Android emulator:            http://10.0.2.2:8000
-  // Android device trên WiFi:    http://192.168.1.110:8000  (thay IP máy tính)
-  static const String baseUrl = 'http://localhost:8000';
+  // Android device trên WiFi:    http://192.168.1.134:8000  (IP máy tính hiện tại)
+  static const String baseUrl = 'http://192.168.1.134:8000';
 
   // Timeouts
   static const Duration connectionTimeout = Duration(seconds: 30);
