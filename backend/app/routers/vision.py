@@ -1,5 +1,6 @@
 """Vision router — ingredient recognition via Gemini Vision."""
 import time
+from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from loguru import logger
@@ -10,23 +11,33 @@ from app.services.llm import llm_provider
 
 router = APIRouter(prefix="/ingredients", tags=["Vision"])
 
-_ALLOWED = {f"image/{ext}" for ext in ["jpeg", "jpg", "png", "webp"]}
+_ALLOWED = {f"image/{ext}" for ext in ["jpeg", "jpg", "png", "webp", "octet-stream"]}
 
 
 def _validate_image(image: UploadFile) -> None:
-    if not image.content_type or image.content_type not in _ALLOWED:
+    # content_type can be "image/jpeg", "image/png", "image/webp",
+    # or "application/octet-stream" (Dio default when no mime is set)
+    ct = (image.content_type or "").lower()
+    is_image_type = ct.startswith("image/")
+    is_octet = ct == "application/octet-stream"
+    if not (is_image_type or is_octet):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an image (jpeg/png/webp)",
+            detail=f"File must be an image (jpeg/png/webp), got: {ct or 'unknown'}",
         )
 
 
 @router.post("/recognize")
 async def recognize_ingredients(
-    image: UploadFile = File(...),
+    image: Optional[UploadFile] = File(None),
     user_id: str = Depends(get_current_user_id),
 ):
     """Recognize food ingredients from an uploaded photo using Gemini Vision."""
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file required. Send as multipart/form-data with field name 'image'.",
+        )
     _validate_image(image)
     image_bytes = await image.read()
     image_kb = round(len(image_bytes) / 1024, 1)

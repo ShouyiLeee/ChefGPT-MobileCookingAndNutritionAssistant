@@ -69,8 +69,8 @@ class RecipeCreate(BaseModel):
     cuisine: Optional[str] = None
     category: Optional[str] = None
     tags: Optional[List[str]] = None
-    ingredients: List[IngredientBase]
-    steps: List[RecipeStepBase]
+    ingredients: List[IngredientBase] = []
+    steps: List[RecipeStepBase] = []
 
 
 class RecipeUpdate(BaseModel):
