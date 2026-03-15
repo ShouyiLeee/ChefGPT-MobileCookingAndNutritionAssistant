@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../domain/order_models.dart';
@@ -93,6 +94,58 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // ── AP2 Flow Banner ─────────────────────────────────────────
+                InkWell(
+                  onTap: () => context.push('/ap2-flow'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.15),
+                          AppColors.accent.withValues(alpha: 0.10),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🤖', style: TextStyle(fontSize: 28)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AP2 — Quy trình thanh toán AI',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Xem cách AI mua sắm & cơ chế đồng thuận',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right,
+                            color: AppColors.primary,),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
                 // ── Spending Limit ──────────────────────────────────────────
                 const _SectionHeader(
                   icon: Icons.speed,

@@ -10,6 +10,10 @@ class PersonaModel {
   final bool isPublic;
   final List<String> cuisineFilters;
   final List<String> quickActions;
+  // Prompt fields — populated from API when editing a custom persona
+  final String systemPrompt;
+  final String recipePrefix;
+  final String mealPlanPrefix;
 
   const PersonaModel({
     required this.id,
@@ -23,6 +27,9 @@ class PersonaModel {
     this.isPublic = true,
     this.cuisineFilters = const [],
     this.quickActions = const [],
+    this.systemPrompt = '',
+    this.recipePrefix = '',
+    this.mealPlanPrefix = '',
   });
 
   factory PersonaModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +51,9 @@ class PersonaModel {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      systemPrompt: json['system_prompt'] as String? ?? '',
+      recipePrefix: json['recipe_prefix'] as String? ?? '',
+      mealPlanPrefix: json['meal_plan_prefix'] as String? ?? '',
     );
   }
 
@@ -59,6 +69,9 @@ class PersonaModel {
         'is_public': isPublic,
         'cuisine_filters': cuisineFilters,
         'quick_actions': quickActions,
+        'system_prompt': systemPrompt,
+        'recipe_prefix': recipePrefix,
+        'meal_plan_prefix': mealPlanPrefix,
       };
 
   /// Parse hex color string "#RRGGBB" to Flutter Color int

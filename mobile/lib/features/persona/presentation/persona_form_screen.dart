@@ -48,9 +48,9 @@ class _PersonaFormScreenState extends ConsumerState<PersonaFormScreen> {
     _nameCtrl = TextEditingController(text: e?.name ?? '');
     _descCtrl = TextEditingController(text: e?.description ?? '');
     _iconCtrl = TextEditingController(text: e?.icon ?? '👨‍🍳');
-    _systemPromptCtrl = TextEditingController();
-    _recipePrefixCtrl = TextEditingController();
-    _mealPlanPrefixCtrl = TextEditingController();
+    _systemPromptCtrl = TextEditingController(text: e?.systemPrompt ?? '');
+    _recipePrefixCtrl = TextEditingController(text: e?.recipePrefix ?? '');
+    _mealPlanPrefixCtrl = TextEditingController(text: e?.mealPlanPrefix ?? '');
     if (e != null) {
       _color = e.color;
       _isPublic = e.isPublic;

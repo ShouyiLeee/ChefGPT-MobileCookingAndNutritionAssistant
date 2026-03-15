@@ -14,6 +14,7 @@ import '../../features/persona/presentation/persona_selection_screen.dart';
 import '../../features/memory/presentation/memory_screen.dart';
 import '../../features/orders/presentation/order_history_screen.dart';
 import '../../features/orders/presentation/agent_wallet_screen.dart';
+import '../../features/orders/presentation/ap2_flow_screen.dart';
 import '../navigation/main_navigation.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -107,6 +108,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/agent-wallet',
             name: 'agent-wallet',
             builder: (_, __) => const AgentWalletScreen(),
+          ),
+          GoRoute(
+            path: '/ap2-flow',
+            name: 'ap2-flow',
+            builder: (_, __) => const Ap2FlowScreen(),
           ),
         ],
       ),
