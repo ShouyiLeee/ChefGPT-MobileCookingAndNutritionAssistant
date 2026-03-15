@@ -24,7 +24,7 @@ from loguru import logger
 
 from app.core.config import settings
 
-_EMBED_MODEL = "text-embedding-004"
+_EMBED_MODEL = "text-embedding-005"
 _MOCK_DIR = Path(__file__).parent.parent / "mocks"
 _RECIPES_PATH = _MOCK_DIR / "recipes.json"
 _EMBED_CACHE_PATH = _MOCK_DIR / "recipe_embeddings.json"
