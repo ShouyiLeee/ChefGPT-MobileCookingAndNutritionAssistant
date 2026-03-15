@@ -1,6 +1,11 @@
 """Authentication router."""
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
 from app.core.database import get_session
 from app.core.security import (
     get_password_hash,
@@ -9,6 +14,7 @@ from app.core.security import (
     create_refresh_token,
     decode_token,
 )
+from app.models.user import User, Profile
 from app.schemas.auth import (
     UserRegister,
     UserLogin,
@@ -16,9 +22,6 @@ from app.schemas.auth import (
     RefreshTokenRequest,
     UserResponse,
 )
-from app.models.user import User, Profile
-from sqlmodel import select
-import uuid
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -35,6 +38,7 @@ async def signup(
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
+        logger.warning("auth:signup_conflict | email={}", user_data.email)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -60,6 +64,7 @@ async def signup(
     access_token = create_access_token({"sub": user.id})
     refresh_token = create_refresh_token({"sub": user.id})
 
+    logger.info("auth:signup | user_id={} email={}", user.id, user.email)
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -85,12 +90,19 @@ async def login(
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(credentials.password, user.hashed_password):
+        logger.warning(
+            "auth:login_failed | email={} reason=invalid_credentials", credentials.email
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
 
     if not user.is_active:
+        logger.warning(
+            "auth:login_failed | email={} user_id={} reason=inactive_account",
+            credentials.email, user.id,
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive",
@@ -105,6 +117,7 @@ async def login(
     access_token = create_access_token({"sub": user.id})
     refresh_token = create_refresh_token({"sub": user.id})
 
+    logger.info("auth:login | user_id={} email={}", user.id, credentials.email)
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
@@ -126,6 +139,7 @@ async def refresh_token(request: RefreshTokenRequest) -> dict:
         token_type = payload.get("type")
 
         if token_type != "refresh":
+            logger.warning("auth:token_refresh_failed | reason=wrong_token_type type={}", token_type)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token type",
@@ -133,6 +147,7 @@ async def refresh_token(request: RefreshTokenRequest) -> dict:
 
         user_id = payload.get("sub")
         if not user_id:
+            logger.warning("auth:token_refresh_failed | reason=missing_sub")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
@@ -141,9 +156,13 @@ async def refresh_token(request: RefreshTokenRequest) -> dict:
         # Create new access token
         access_token = create_access_token({"sub": user_id})
 
+        logger.debug("auth:token_refresh | user_id={}", user_id)
         return {"access_token": access_token, "token_type": "bearer"}
 
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.warning("auth:token_refresh_failed | reason={}", str(e)[:80])
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
@@ -153,4 +172,5 @@ async def refresh_token(request: RefreshTokenRequest) -> dict:
 @router.post("/logout")
 async def logout() -> dict:
     """Logout user (client should discard tokens)."""
+    logger.debug("auth:logout")
     return {"message": "Successfully logged out"}

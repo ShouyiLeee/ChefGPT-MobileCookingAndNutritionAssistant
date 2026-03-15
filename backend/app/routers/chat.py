@@ -133,14 +133,21 @@ async def send_message(
     try:
         reply = await llm_provider.chat(request.message, history, persona=persona)
     except Exception as e:
+        llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
         logger.error(
-            "router:chat | llm_error={} latency={}ms",
-            str(e)[:200], round((time.perf_counter() - t_llm) * 1000, 1),
+            "router:chat | llm_error={} llm_latency={}ms",
+            str(e)[:200], llm_ms,
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"AI service error: {str(e)}",
         )
+
+    llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
+    logger.debug(
+        "router:chat | llm_ok reply_len={} llm_latency={}ms",
+        len(reply), llm_ms,
+    )
 
     # Save assistant message
     assistant_msg = ChatMessage(session_id=chat_session.id, role="model", content=reply)
@@ -192,18 +199,21 @@ async def send_message(
             )
             shopping_suggestion = suggestion.model_dump()
             logger.info(
-                "router:chat | shopping_intent=true store={} items={} total={}k",
+                "router:chat | shopping_intent=true store={} items={} total={}k mandate_id={}",
                 cart.store_id, len(cart.items), cart.estimated_total,
+                mandate.id if mandate else None,
             )
+        else:
+            logger.debug("router:chat | shopping_intent=false")
     except asyncio.TimeoutError:
-        logger.warning("router:chat | shopping_intent timeout — skipping")
+        logger.warning("router:chat | shopping_intent=timeout — skipping suggestion")
     except Exception as _e:
-        logger.warning("router:chat | shopping_intent error={}", str(_e)[:100])
+        logger.warning("router:chat | shopping_intent=error reason={}", str(_e)[:100])
 
     total_ms = round((time.perf_counter() - t0) * 1000, 1)
     logger.info(
-        "router:chat | ok session_id={} reply_len={} history_turns={} total_latency={}ms",
-        chat_session.id, len(reply), len(recent), total_ms,
+        "router:chat | ok session_id={} reply_len={} history_turns={} llm_latency={}ms total_latency={}ms",
+        chat_session.id, len(reply), len(recent), llm_ms, total_ms,
     )
 
     return ChatMessageResponse(
@@ -225,6 +235,11 @@ async def confirm_purchase(
     Confirm and execute an agent purchase suggested during chat.
     Uses the user's active Payment Mandate (or the specified mandate_id).
     """
+    logger.info(
+        "chat:confirm_purchase | user_id={} store={} items={} total={}k",
+        user_id, body.cart_mandate.store_id,
+        len(body.cart_mandate.items), body.cart_mandate.estimated_total,
+    )
     # Load mandate
     if body.payment_mandate_id:
         mandate = await session.get(PaymentMandate, body.payment_mandate_id)
@@ -278,19 +293,27 @@ async def confirm_purchase(
             db=session,
         )
     except ValueError as e:
+        logger.warning(
+            "chat:confirm_purchase | spending_limit_exceeded user_id={} total={}k limit={}k",
+            user_id, cart.estimated_total, mandate.spending_limit,
+        )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
     except RuntimeError as e:
+        logger.error(
+            "chat:confirm_purchase | payment_failed user_id={} store={} error={}",
+            user_id, cart.store_id, str(e)[:120],
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
         )
 
     logger.info(
-        "chat:confirm_purchase | user_id={} order_id={} total={}k",
-        user_id, result_obj.order_id, cart.estimated_total,
+        "chat:confirm_purchase | ok user_id={} order_id={} total={}k txn={}",
+        user_id, result_obj.order_id, cart.estimated_total, result_obj.transaction_id,
     )
     return ConfirmPurchaseResponse(
         order_id=result_obj.order_id,

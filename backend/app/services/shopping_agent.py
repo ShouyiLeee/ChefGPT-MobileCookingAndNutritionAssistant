@@ -12,6 +12,7 @@ The CartMandate is an in-memory dataclass passed between services (not a DB mode
 from __future__ import annotations
 
 import json
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -108,9 +109,14 @@ class ShoppingAgentService:
         Returns ShoppingIntentResult or None on error.
         Times out gracefully — caller should wrap with asyncio.wait_for().
         """
+        t0 = time.perf_counter()
+        logger.debug(
+            "shopping_agent:detect | message_len={}", len(message)
+        )
         try:
             key = settings.gemini_api_key
             if not key:
+                logger.warning("shopping_agent:detect | no_api_key — skipping")
                 return None
             client = genai.Client(api_key=key)
             prompt = _INTENT_PROMPT.format(message=message[:500])
@@ -132,14 +138,18 @@ class ShoppingAgentService:
                 ],
                 suggested_store=data.get("suggested_store"),
             )
+            latency_ms = round((time.perf_counter() - t0) * 1000, 1)
             logger.debug(
-                "shopping_agent:intent | has_intent={} items={}",
-                result.has_intent,
-                result.items_mentioned,
+                "shopping_agent:intent | has_intent={} items={} latency={}ms",
+                result.has_intent, result.items_mentioned, latency_ms,
             )
             return result
         except Exception as e:
-            logger.warning("shopping_agent:intent_error | {}", str(e)[:100])
+            latency_ms = round((time.perf_counter() - t0) * 1000, 1)
+            logger.warning(
+                "shopping_agent:intent_error | latency={}ms error={}",
+                latency_ms, str(e)[:100],
+            )
             return None
 
     async def build_cart_from_intent(
@@ -178,12 +188,22 @@ class ShoppingAgentService:
                     break
 
             if best and best_score > 0:
+                logger.debug(
+                    "shopping_agent:match | query={!r} product={} score={}",
+                    item_query, best["id"], best_score,
+                )
                 matched.append(best)
                 seen_ids.add(best["id"])
+            else:
+                logger.debug("shopping_agent:no_match | query={!r}", item_query)
 
         # Pick the store with the most matches, preferring suggested_store
         if not matched:
             # Fallback: return a starter cart with popular items
+            logger.warning(
+                "shopping_agent:fallback_cart | reason=no_product_matches items_queried={}",
+                intent.items_mentioned,
+            )
             matched = [p for p in products if p["id"] in ("b2", "b9", "b10")][:3]
 
         # Determine best store

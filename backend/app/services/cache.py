@@ -26,17 +26,20 @@ class CacheService:
             r = await self._client()
             data = await r.get(key)
             if data:
+                logger.debug("cache:hit | key={}", key)
                 return json.loads(data)
+            logger.debug("cache:miss | key={}", key)
         except Exception as e:
-            logger.warning("Cache get failed key={}: {}", key, e)
+            logger.warning("cache:get_failed | key={} error={}", key, e)
         return None
 
     async def set(self, key: str, value: dict | list, ttl: int) -> None:
         try:
             r = await self._client()
             await r.set(key, json.dumps(value, ensure_ascii=False), ex=ttl)
+            logger.debug("cache:set | key={} ttl={}s", key, ttl)
         except Exception as e:
-            logger.warning("Cache set failed key={}: {}", key, e)
+            logger.warning("cache:set_failed | key={} error={}", key, e)
 
     async def incr(self, key: str) -> int:
         """Atomically increment a counter (used for round-robin key selection)."""
@@ -44,7 +47,7 @@ class CacheService:
             r = await self._client()
             return await r.incr(key)
         except Exception as e:
-            logger.warning("Cache incr failed key={}: {}", key, e)
+            logger.warning("cache:incr_failed | key={} error={}", key, e)
             return 1
 
     async def set_ex(self, key: str, value: str, ttl: int) -> None:
@@ -53,7 +56,7 @@ class CacheService:
             r = await self._client()
             await r.set(key, value, ex=ttl)
         except Exception as e:
-            logger.warning("Cache set_ex failed key={}: {}", key, e)
+            logger.warning("cache:set_ex_failed | key={} error={}", key, e)
 
     async def exists(self, key: str) -> bool:
         try:
@@ -66,9 +69,14 @@ class CacheService:
         """Get a raw string value (e.g. persona_id)."""
         try:
             r = await self._client()
-            return await r.get(key)
+            val = await r.get(key)
+            if val is not None:
+                logger.debug("cache:hit_raw | key={}", key)
+            else:
+                logger.debug("cache:miss_raw | key={}", key)
+            return val
         except Exception as e:
-            logger.warning("Cache get_raw failed key={}: {}", key, e)
+            logger.warning("cache:get_raw_failed | key={} error={}", key, e)
         return None
 
     async def set_raw(self, key: str, value: str, ttl: int) -> None:
@@ -76,22 +84,30 @@ class CacheService:
         try:
             r = await self._client()
             await r.set(key, value, ex=ttl)
+            logger.debug("cache:set_raw | key={} ttl={}s", key, ttl)
         except Exception as e:
-            logger.warning("Cache set_raw failed key={}: {}", key, e)
+            logger.warning("cache:set_raw_failed | key={} error={}", key, e)
 
     async def delete(self, key: str) -> None:
         """Delete a key."""
         try:
             r = await self._client()
             await r.delete(key)
+            logger.debug("cache:delete | key={}", key)
         except Exception as e:
-            logger.warning("Cache delete failed key={}: {}", key, e)
+            logger.warning("cache:delete_failed | key={} error={}", key, e)
 
     async def ping(self) -> bool:
         try:
             r = await self._client()
-            return bool(await r.ping())
-        except Exception:
+            ok = bool(await r.ping())
+            if ok:
+                logger.debug("cache:ping | url={} status=ok", self._url)
+            else:
+                logger.warning("cache:ping | url={} status=no_response", self._url)
+            return ok
+        except Exception as e:
+            logger.warning("cache:ping | url={} status=error error={}", self._url, e)
             return False
 
     @staticmethod

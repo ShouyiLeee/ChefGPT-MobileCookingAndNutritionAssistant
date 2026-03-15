@@ -170,10 +170,15 @@ async def get_payment_mandate(
     )
     mandate = result.scalar_one_or_none()
     if not mandate:
+        logger.debug("mandate:not_found | user_id={}", user_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Chưa thiết lập Ví AI. Vui lòng cấu hình trong phần Ví AI & Hạn mức.",
         )
+    logger.debug(
+        "mandate:get | user_id={} method={} limit={}k",
+        user_id, mandate.payment_method, mandate.spending_limit,
+    )
     return _mandate_to_response(mandate)
 
 
@@ -193,6 +198,11 @@ async def place_agent_order(
     Place an agent order using a CartMandate.
     Used by both the chat confirm flow and the grocery screen checkout.
     """
+    logger.info(
+        "order:place_start | user_id={} store={} items={} total={}k",
+        user_id, body.cart_mandate.store_id,
+        len(body.cart_mandate.items), body.cart_mandate.estimated_total,
+    )
     # Load mandate
     if body.payment_mandate_id:
         mandate = await session.get(PaymentMandate, body.payment_mandate_id)
@@ -211,6 +221,7 @@ async def place_agent_order(
         mandate = result.scalar_one_or_none()
 
     if not mandate:
+        logger.warning("order:mandate_missing | user_id={}", user_id)
         raise HTTPException(
             status_code=status.HTTP_402_PAYMENT_REQUIRED,
             detail="Chưa thiết lập Ví AI. Vui lòng cấu hình hạn mức thanh toán trong phần Ví AI.",
@@ -226,11 +237,19 @@ async def place_agent_order(
             db=session,
         )
     except ValueError as e:
+        logger.warning(
+            "order:spending_limit_exceeded | user_id={} total={}k limit={}k",
+            user_id, cart.estimated_total, mandate.spending_limit,
+        )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
     except RuntimeError as e:
+        logger.error(
+            "order:payment_failed | user_id={} store={} total={}k error={}",
+            user_id, cart.store_id, cart.estimated_total, str(e)[:120],
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
@@ -263,6 +282,10 @@ async def list_orders(
         .limit(limit)
     )
     orders = result.scalars().all()
+    logger.debug(
+        "order:list | user_id={} count={} page={}",
+        user_id, len(orders), page,
+    )
     return [await _order_to_response(o, session) for o in orders]
 
 
@@ -275,10 +298,15 @@ async def get_order(
     """Get a specific order by ID (ownership verified)."""
     order = await session.get(AgentOrder, order_id)
     if not order or order.user_id != user_id:
+        logger.debug("order:not_found | user_id={} order_id={}", user_id, order_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Order not found",
         )
+    logger.debug(
+        "order:get | user_id={} order_id={} status={}",
+        user_id, order_id, order.status,
+    )
     return await _order_to_response(order, session)
 
 

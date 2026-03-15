@@ -143,8 +143,12 @@ class MemoryService:
         them. Deduplication is enforced at DB level (UNIQUE constraint).
         Returns the number of new entries inserted.
         """
+        logger.debug(
+            "memory:extract_start | user_id={} message_len={}", user_id, len(user_message)
+        )
         facts = await llm.extract_memory_facts(user_message)
         if not facts:
+            logger.debug("memory:extract_empty | user_id={}", user_id)
             return 0
 
         inserted = 0
@@ -168,9 +172,17 @@ class MemoryService:
             await db.commit()
             # Invalidate cache so next request gets fresh context
             if cache:
-                await cache.delete(f"{CACHE_PREFIX}{user_id}")
+                cache_key = f"{CACHE_PREFIX}{user_id}"
+                await cache.delete(cache_key)
+                logger.debug("memory:cache_invalidated | user_id={}", user_id)
             logger.info(
-                "memory:extracted | user_id={} new_entries={}", user_id, inserted
+                "memory:extracted | user_id={} new_entries={} total_facts={}",
+                user_id, inserted, len(facts),
+            )
+        else:
+            logger.debug(
+                "memory:extract_dedup | user_id={} facts_seen={} all_duplicate",
+                user_id, len(facts),
             )
 
         return inserted
@@ -224,6 +236,10 @@ class MemoryService:
         if cache:
             await cache.delete(f"{CACHE_PREFIX}{user_id}")
 
+        logger.info(
+            "memory:explicit_add | user_id={} category={} key={} value={!r}",
+            user_id, category, key, value[:50],
+        )
         return mem
 
     async def delete(

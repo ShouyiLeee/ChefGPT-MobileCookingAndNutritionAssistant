@@ -63,8 +63,18 @@ class PaymentService:
           ValueError: if cart exceeds spending limit
           RuntimeError: if mock payment fails
         """
+        logger.info(
+            "payment:execute | user_id={} store={} items={} total={}k method={}",
+            user_id, cart.store_id, len(cart.items),
+            cart.estimated_total, mandate.payment_method,
+        )
+
         # 1. Spending limit check
         if cart.estimated_total > mandate.spending_limit:
+            logger.warning(
+                "payment:limit_exceeded | user_id={} total={}k limit={}k store={}",
+                user_id, cart.estimated_total, mandate.spending_limit, cart.store_id,
+            )
             raise ValueError(
                 f"Tổng đơn hàng {cart.estimated_total:.0f}k VND vượt hạn mức "
                 f"{mandate.spending_limit:.0f}k VND. Vui lòng điều chỉnh hạn mức trong Ví AI."
@@ -142,9 +152,14 @@ class PaymentService:
         if random.random() < 0.95:
             txn_id = f"mock_txn_{uuid.uuid4().hex[:8]}"
             logger.debug(
-                "payment:mock_charge | method={} amount={}k txn={}", method, amount, txn_id
+                "payment:mock_charge | method={} amount={}k txn={} status=approved",
+                method, amount, txn_id,
             )
             return PaymentResult(success=True, transaction_id=txn_id)
+        logger.warning(
+            "payment:mock_declined | method={} amount={}k reason=random_5pct_failure",
+            method, amount,
+        )
         return PaymentResult(
             success=False,
             transaction_id="",
