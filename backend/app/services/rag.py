@@ -3,7 +3,7 @@ RAG (Retrieval-Augmented Generation) service for ChefGPT.
 
 Architecture:
   - Community recipe corpus: mocks/recipes.json (30 Vietnamese recipes)
-  - Embeddings: Gemini text-embedding-004 (768-dim)
+  - Embeddings: gemini-embedding-001 (3072-dim, task_type-aware)
   - Vector store: in-memory numpy array (cosine similarity)
   - Cache: mocks/recipe_embeddings.json (avoids re-generating on every restart)
 
@@ -13,18 +13,19 @@ Usage:
   context = await rag_service.get_context(["cà chua", "trứng"], ["chay"])
 """
 import json
-import os
 import time
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 from google import genai
+from google.genai import types
 from loguru import logger
 
 from app.core.config import settings
 
-_EMBED_MODEL = "text-embedding-004"
+_EMBED_MODEL = "gemini-embedding-001"
+_EMBED_DIM = 3072          # output dimension of gemini-embedding-001
 _MOCK_DIR = Path(__file__).parent.parent / "mocks"
 _RECIPES_PATH = _MOCK_DIR / "recipes.json"
 _EMBED_CACHE_PATH = _MOCK_DIR / "recipe_embeddings.json"
@@ -38,7 +39,7 @@ class RecipeRAGService:
 
     def __init__(self) -> None:
         self._recipes: list[dict] = []
-        self._embeddings: Optional[np.ndarray] = None  # shape (N, 768)
+        self._embeddings: Optional[np.ndarray] = None  # shape (N, _EMBED_DIM)
         self._ready = False
 
     # ── Initialization ─────────────────────────────────────────────────────────
@@ -72,12 +73,31 @@ class RecipeRAGService:
         try:
             with open(_EMBED_CACHE_PATH, encoding="utf-8") as f:
                 data = json.load(f)
-            if data.get("count") != len(self._recipes):
-                logger.info("RAG: cache stale (recipe count mismatch), rebuilding")
+            if data.get("model") != _EMBED_MODEL:
+                logger.info(
+                    "RAG: cache stale (model mismatch: cached={} current={}), rebuilding",
+                    data.get("model"), _EMBED_MODEL,
+                )
                 return False
-            self._embeddings = np.array(data["embeddings"], dtype=np.float32)
+            if data.get("count") != len(self._recipes):
+                logger.info(
+                    "RAG: cache stale (recipe count mismatch: cached={} current={}), rebuilding",
+                    data.get("count"), len(self._recipes),
+                )
+                return False
+            embeddings = np.array(data["embeddings"], dtype=np.float32)
+            if embeddings.shape[1] != _EMBED_DIM:
+                logger.info(
+                    "RAG: cache stale (dim mismatch: cached={} expected={}), rebuilding",
+                    embeddings.shape[1], _EMBED_DIM,
+                )
+                return False
+            self._embeddings = embeddings
             self._ready = True
-            logger.info("RAG: loaded embeddings from cache ({})", _EMBED_CACHE_PATH.name)
+            logger.info(
+                "RAG: loaded embeddings from cache | model={} recipes={} dim={}",
+                _EMBED_MODEL, len(self._recipes), _EMBED_DIM,
+            )
             return True
         except Exception as e:
             logger.warning("RAG: failed to load embedding cache: {}", e)
@@ -85,7 +105,10 @@ class RecipeRAGService:
 
     async def _build_index(self) -> None:
         """Generate embeddings for all community recipes and cache to disk."""
-        logger.info("RAG: generating embeddings for {} recipes via Gemini...", len(self._recipes))
+        logger.info(
+            "RAG: generating embeddings for {} recipes | model={} dim={}",
+            len(self._recipes), _EMBED_MODEL, _EMBED_DIM,
+        )
         t0 = time.perf_counter()
 
         key = settings.gemini_keys_list[0] if settings.gemini_keys_list else settings.gemini_api_key
@@ -96,22 +119,30 @@ class RecipeRAGService:
             text = self._recipe_to_text(recipe)
             try:
                 result = await client.aio.models.embed_content(
-                    model=_EMBED_MODEL, contents=text
+                    model=_EMBED_MODEL,
+                    contents=text,
+                    config=types.EmbedContentConfig(
+                        task_type="RETRIEVAL_DOCUMENT",
+                    ),
                 )
                 embeddings.append(result.embeddings[0].values)
             except Exception as e:
                 logger.error("RAG: embedding failed for recipe '{}': {}", recipe.get("title"), e)
                 # Use zero vector as fallback so index stays aligned
-                embeddings.append([0.0] * 768)
+                embeddings.append([0.0] * _EMBED_DIM)
 
         self._embeddings = np.array(embeddings, dtype=np.float32)
 
-        # Save cache
+        # Save cache (include model name for stale detection on next restart)
         try:
             _MOCK_DIR.mkdir(parents=True, exist_ok=True)
             with open(_EMBED_CACHE_PATH, "w", encoding="utf-8") as f:
                 json.dump(
-                    {"count": len(self._recipes), "embeddings": self._embeddings.tolist()},
+                    {
+                        "model": _EMBED_MODEL,
+                        "count": len(self._recipes),
+                        "embeddings": self._embeddings.tolist(),
+                    },
                     f,
                 )
             logger.info("RAG: embeddings cached to {}", _EMBED_CACHE_PATH.name)
@@ -119,7 +150,7 @@ class RecipeRAGService:
             logger.warning("RAG: could not write embedding cache: {}", e)
 
         elapsed = round((time.perf_counter() - t0) * 1000)
-        logger.info("RAG: index built in {}ms", elapsed)
+        logger.info("RAG: index built in {}ms | shape={}", elapsed, self._embeddings.shape)
         self._ready = True
 
     # ── Public API ─────────────────────────────────────────────────────────────
@@ -139,7 +170,11 @@ class RecipeRAGService:
             key = settings.gemini_keys_list[0] if settings.gemini_keys_list else settings.gemini_api_key
             client = genai.Client(api_key=key)
             result = await client.aio.models.embed_content(
-                model=_EMBED_MODEL, contents=query
+                model=_EMBED_MODEL,
+                contents=query,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_QUERY",
+                ),
             )
             query_emb = np.array(result.embeddings[0].values, dtype=np.float32)
         except Exception as e:
