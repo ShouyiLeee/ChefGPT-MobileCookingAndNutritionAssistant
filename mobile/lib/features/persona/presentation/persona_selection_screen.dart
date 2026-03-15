@@ -78,12 +78,23 @@ class _PersonaGridContentState extends ConsumerState<PersonaGridContent> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            'Chọn hoặc tạo nhân vật AI cho riêng bạn',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Chọn hoặc tạo nhân vật AI cho riêng bạn',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
+              ),
+              TextButton.icon(
+                onPressed: () => _createPersona(context),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Tạo mới'),
+              ),
+            ],
           ),
         ),
         Expanded(
@@ -140,6 +151,17 @@ class _PersonaGridContentState extends ConsumerState<PersonaGridContent> {
         ),
       ],
     );
+  }
+
+  Future<void> _createPersona(BuildContext context) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const PersonaFormScreen()),
+    );
+    if (result == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã tạo nhân vật mới!')),
+      );
+    }
   }
 
   Future<void> _editPersona(BuildContext context, PersonaModel persona) async {
