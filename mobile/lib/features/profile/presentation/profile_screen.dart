@@ -57,15 +57,40 @@ class ProfileScreen extends ConsumerWidget {
 
           const Divider(),
 
-          // Persona selection
+          // ── AI Features ─────────────────────────────────────────────────
+          _sectionHeader(context, 'Nhân vật & Trí nhớ AI'),
           const _PersonaMenuItem(),
-
-          // Memory
+          _item(
+            context, Icons.add_circle_outline, 'Tạo nhân vật AI mới',
+            () => context.push('/persona-form'),
+            subtitle: 'Tùy chỉnh phong cách & prompt riêng',
+            color: AppColors.primary,
+          ),
           const _MemoryMenuItem(),
 
           const Divider(),
 
-          // Menu
+          // ── AI Shopping ─────────────────────────────────────────────────
+          _sectionHeader(context, 'Mua sắm AI (AP2)'),
+          _item(
+            context, Icons.account_balance_wallet_outlined, 'Ví AI & Hạn mức',
+            () => context.push('/agent-wallet'),
+          ),
+          _item(
+            context, Icons.receipt_long_outlined, 'Đơn hàng AI',
+            () => context.push('/orders'),
+          ),
+          _item(
+            context, Icons.smart_toy_outlined, 'AP2 — Quy trình thanh toán AI',
+            () => context.push('/ap2-flow'),
+            subtitle: 'Xem cách AI mua sắm & cơ chế đồng thuận',
+            color: AppColors.accent,
+          ),
+
+          const Divider(),
+
+          // ── Navigation ───────────────────────────────────────────────────
+          _sectionHeader(context, 'Điều hướng nhanh'),
           _item(
             context, Icons.chat_bubble, 'Chat với ChefGPT',
             () => context.go('/home'),
@@ -86,14 +111,6 @@ class ProfileScreen extends ConsumerWidget {
             context, Icons.people, 'Cộng đồng',
             () => context.go('/social'),
           ),
-          _item(
-            context, Icons.account_balance_wallet_outlined, 'Ví AI & Hạn mức',
-            () => context.push('/agent-wallet'),
-          ),
-          _item(
-            context, Icons.receipt_long_outlined, 'Đơn hàng AI',
-            () => context.push('/orders'),
-          ),
 
           const Divider(),
 
@@ -112,15 +129,35 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Widget _sectionHeader(BuildContext context, String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.8,
+            ),
+      ),
+    );
+  }
+
   Widget _item(
     BuildContext context,
     IconData icon,
     String title,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    String? subtitle,
+    Color? color,
+  }) {
     return ListTile(
-      leading: Icon(icon, color: AppColors.textPrimary),
+      leading: Icon(icon, color: color ?? AppColors.textPrimary),
       title: Text(title),
+      subtitle: subtitle != null
+          ? Text(subtitle,
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),)
+          : null,
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     );
