@@ -10,6 +10,10 @@ import '../../features/meal_plan/presentation/meal_plan_screen.dart';
 import '../../features/grocery/presentation/grocery_screen.dart';
 import '../../features/social/presentation/social_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/persona/presentation/persona_selection_screen.dart';
+import '../../features/memory/presentation/memory_screen.dart';
+import '../../features/orders/presentation/order_history_screen.dart';
+import '../../features/orders/presentation/agent_wallet_screen.dart';
 import '../navigation/main_navigation.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -83,6 +87,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             name: 'profile',
             pageBuilder: (_, __) =>
                 const NoTransitionPage(child: ProfileScreen()),
+          ),
+          GoRoute(
+            path: '/persona-select',
+            name: 'persona-select',
+            builder: (_, __) => const PersonaSelectionScreen(),
+          ),
+          GoRoute(
+            path: '/memory',
+            name: 'memory',
+            builder: (_, __) => const MemoryScreen(),
+          ),
+          GoRoute(
+            path: '/orders',
+            name: 'orders',
+            builder: (_, __) => const OrderHistoryScreen(),
+          ),
+          GoRoute(
+            path: '/agent-wallet',
+            name: 'agent-wallet',
+            builder: (_, __) => const AgentWalletScreen(),
           ),
         ],
       ),

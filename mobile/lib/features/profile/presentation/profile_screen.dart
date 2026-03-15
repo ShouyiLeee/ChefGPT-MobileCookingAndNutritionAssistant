@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/domain/auth_state.dart';
+import '../../memory/domain/memory_state.dart';
+import '../../persona/domain/persona_state.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -30,44 +32,77 @@ class ProfileScreen extends ConsumerWidget {
                             ? user!.email[0].toUpperCase()
                             : 'U'),
                     style: const TextStyle(
-                        fontSize: 36,
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold),
+                      fontSize: 36,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(user?.name ?? 'Người dùng',
-                    style: Theme.of(context).textTheme.headlineSmall),
+                Text(
+                  user?.name ?? 'Người dùng',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 4),
-                Text(user?.email ?? '',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: AppColors.textSecondary)),
+                Text(
+                  user?.email ?? '',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: AppColors.textSecondary),
+                ),
               ],
             ),
           ),
 
           const Divider(),
 
+          // Persona selection
+          const _PersonaMenuItem(),
+
+          // Memory
+          const _MemoryMenuItem(),
+
+          const Divider(),
+
           // Menu
-          _item(context, Icons.chat_bubble, 'Chat với ChefGPT',
-              () => context.go('/home')),
-          _item(context, Icons.restaurant_menu, 'Gợi ý món ăn',
-              () => context.go('/recipes')),
-          _item(context, Icons.calendar_month, 'Kế hoạch bữa ăn',
-              () => context.go('/mealplan')),
-          _item(context, Icons.shopping_cart, 'Danh sách mua sắm',
-              () => context.go('/grocery')),
-          _item(context, Icons.people, 'Cộng đồng',
-              () => context.go('/social')),
+          _item(
+            context, Icons.chat_bubble, 'Chat với ChefGPT',
+            () => context.go('/home'),
+          ),
+          _item(
+            context, Icons.restaurant_menu, 'Gợi ý món ăn',
+            () => context.go('/recipes'),
+          ),
+          _item(
+            context, Icons.calendar_month, 'Kế hoạch bữa ăn',
+            () => context.go('/mealplan'),
+          ),
+          _item(
+            context, Icons.shopping_cart, 'Danh sách mua sắm',
+            () => context.go('/grocery'),
+          ),
+          _item(
+            context, Icons.people, 'Cộng đồng',
+            () => context.go('/social'),
+          ),
+          _item(
+            context, Icons.account_balance_wallet_outlined, 'Ví AI & Hạn mức',
+            () => context.push('/agent-wallet'),
+          ),
+          _item(
+            context, Icons.receipt_long_outlined, 'Đơn hàng AI',
+            () => context.push('/orders'),
+          ),
 
           const Divider(),
 
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Đăng xuất',
-                style: TextStyle(color: AppColors.error)),
+            title: const Text(
+              'Đăng xuất',
+              style: TextStyle(color: AppColors.error),
+            ),
             onTap: () => _confirmLogout(context, ref),
           ),
 
@@ -78,7 +113,11 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _item(
-      BuildContext context, IconData icon, String title, VoidCallback onTap) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textPrimary),
       title: Text(title),
@@ -95,8 +134,9 @@ class ProfileScreen extends ConsumerWidget {
         content: const Text('Bạn có chắc muốn đăng xuất?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Huỷ')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Huỷ'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -108,6 +148,46 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PersonaMenuItem extends ConsumerWidget {
+  const _PersonaMenuItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final persona = ref.watch(personaProvider).activePersona;
+    final label = persona != null
+        ? '${persona.icon} ${persona.name}'
+        : '👨‍🍳 Chọn nhân vật';
+
+    return ListTile(
+      leading: const Icon(Icons.smart_toy_outlined, color: AppColors.primary),
+      title: const Text('Nhân vật AI'),
+      subtitle: Text(label, style: const TextStyle(fontSize: 13)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push('/persona-select'),
+    );
+  }
+}
+
+class _MemoryMenuItem extends ConsumerWidget {
+  const _MemoryMenuItem();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final memories = ref.watch(memoryProvider).memories;
+    final subtitle = memories.isEmpty
+        ? 'ChefGPT chưa biết gì về bạn'
+        : '${memories.length} thông tin đã lưu';
+
+    return ListTile(
+      leading: const Icon(Icons.psychology_outlined, color: AppColors.primary),
+      title: const Text('Bộ nhớ AI'),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push('/memory'),
     );
   }
 }

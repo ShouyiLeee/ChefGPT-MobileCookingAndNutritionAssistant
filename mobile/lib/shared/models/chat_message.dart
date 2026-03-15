@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../features/orders/domain/order_models.dart';
+
 enum MessageType { user, assistant }
 
 class ChatMessage extends Equatable {
@@ -8,6 +10,7 @@ class ChatMessage extends Equatable {
   final MessageType type;
   final DateTime timestamp;
   final bool isLoading;
+  final ShoppingSuggestion? shoppingSuggestion;
 
   const ChatMessage({
     required this.id,
@@ -15,6 +18,7 @@ class ChatMessage extends Equatable {
     required this.type,
     required this.timestamp,
     this.isLoading = false,
+    this.shoppingSuggestion,
   });
 
   ChatMessage copyWith({
@@ -23,6 +27,7 @@ class ChatMessage extends Equatable {
     MessageType? type,
     DateTime? timestamp,
     bool? isLoading,
+    ShoppingSuggestion? shoppingSuggestion,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -30,9 +35,11 @@ class ChatMessage extends Equatable {
       type: type ?? this.type,
       timestamp: timestamp ?? this.timestamp,
       isLoading: isLoading ?? this.isLoading,
+      shoppingSuggestion: shoppingSuggestion ?? this.shoppingSuggestion,
     );
   }
 
   @override
-  List<Object?> get props => [id, message, type, timestamp, isLoading];
+  List<Object?> get props =>
+      [id, message, type, timestamp, isLoading, shoppingSuggestion];
 }

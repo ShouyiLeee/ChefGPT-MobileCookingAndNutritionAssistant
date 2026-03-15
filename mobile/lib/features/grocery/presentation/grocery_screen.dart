@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_service.dart';
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODELS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1053,6 +1055,7 @@ class _CheckoutSheetState extends State<_CheckoutSheet>
     with SingleTickerProviderStateMixin {
   int _payment = 0; // 0=COD, 1=MoMo, 2=ZaloPay, 3=Banking
   bool _ordered = false;
+  bool _isOrdering = false;
   late AnimationController _successCtrl;
   late Animation<double> _successScale;
 
@@ -1076,15 +1079,58 @@ class _CheckoutSheetState extends State<_CheckoutSheet>
     super.dispose();
   }
 
-  void _placeOrder() {
+  static const _methodKeys = ['cod', 'momo', 'zalopay', 'bank_transfer'];
+
+  Future<void> _placeOrder() async {
     HapticFeedback.heavyImpact();
-    setState(() => _ordered = true);
-    _successCtrl.forward();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      widget.ref.read(_shopProvider.notifier).clearCart();
-      Navigator.pop(context);
-    });
+    setState(() => _isOrdering = true);
+
+    final st = widget.ref.read(_shopProvider);
+    final api = widget.ref.read(apiServiceProvider);
+    final paymentMethod = _methodKeys[_payment];
+
+    final cartMandate = {
+      'store_id': widget.store.id,
+      'store_name': widget.store.name,
+      'payment_method': paymentMethod,
+      'items': st.cart.map((c) => {
+            'product_id': c.product.id,
+            'product_name': c.product.name,
+            'product_emoji': c.product.emoji,
+            'unit': c.product.unit,
+            'quantity': c.qty,
+            'unit_price': c.product.price,
+            'subtotal': c.subtotal,
+          },).toList(),
+      'subtotal': st.cartTotal,
+      'delivery_fee': widget.store.deliveryFee,
+      'estimated_total': st.cartTotal + widget.store.deliveryFee,
+      'intent_description': 'Manual grocery order',
+    };
+
+    try {
+      await api.placeAgentOrder(cartMandate: cartMandate);
+      setState(() {
+        _isOrdering = false;
+        _ordered = true;
+      });
+      _successCtrl.forward();
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        widget.ref.read(_shopProvider.notifier).clearCart();
+        Navigator.pop(context);
+      });
+    } catch (e) {
+      setState(() => _isOrdering = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đặt hàng thất bại: ${ApiService.parseError(e)}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -1255,13 +1301,22 @@ class _CheckoutSheetState extends State<_CheckoutSheet>
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
-                onPressed: _placeOrder,
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.check_circle_outline_rounded, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Đặt hàng • ${total.toInt()}k',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ]),
+                onPressed: _isOrdering ? null : _placeOrder,
+                child: _isOrdering
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.check_circle_outline_rounded, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Đặt hàng • ${total.toInt()}k',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),),
+                      ],),
               ),
             ),
           ),

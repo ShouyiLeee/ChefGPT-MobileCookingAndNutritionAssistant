@@ -63,10 +63,14 @@ class ApiService {
   // ── AI: Recipes / Ingredients ─────────────────────────────────────────────
 
   Future<Map<String, dynamic>> suggestRecipes(
-      List<String> ingredients, List<String> filters) async {
+    List<String> ingredients,
+    List<String> filters, {
+    String? personaId,
+  }) async {
     final res = await _dio.post('/recipes/suggest', data: {
       'ingredients': ingredients,
       'filters': filters,
+      if (personaId != null) 'persona_id': personaId,
     });
     return res.data as Map<String, dynamic>;
   }
@@ -83,10 +87,14 @@ class ApiService {
   // ── AI: Chat ──────────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> sendChat(
-      String message, List<Map<String, dynamic>> history) async {
+    String message,
+    List<Map<String, dynamic>> history, {
+    String? personaId,
+  }) async {
     final res = await _dio.post('/chat/query', data: {
       'message': message,
       'history': history,
+      if (personaId != null) 'persona_id': personaId,
     });
     return res.data as Map<String, dynamic>;
   }
@@ -94,13 +102,84 @@ class ApiService {
   // ── AI: Meal Plan ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> generateMealPlan(
-      String goal, int days, int caloriesTarget) async {
+    String goal,
+    int days,
+    int caloriesTarget, {
+    List<String>? personaIds,
+    String? userNote,
+  }) async {
     final res = await _dio.post('/mealplan/generate', data: {
       'goal': goal,
       'days': days,
       'calories_target': caloriesTarget,
+      if (personaIds != null && personaIds.isNotEmpty) 'persona_ids': personaIds,
+      if (userNote != null && userNote.isNotEmpty) 'user_note': userNote,
     });
     return res.data as Map<String, dynamic>;
+  }
+
+  // ── Memory ────────────────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> getMemories() async {
+    final res = await _dio.get('/memory/me');
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> addMemory({
+    required String category,
+    required String key,
+    required String value,
+  }) async {
+    final res = await _dio.post('/memory/me', data: {
+      'category': category,
+      'key': key,
+      'value': value,
+    },);
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<void> deleteMemory(int memoryId) async {
+    await _dio.delete('/memory/me/$memoryId');
+  }
+
+  Future<Map<String, dynamic>> clearAllMemories() async {
+    final res = await _dio.delete('/memory/me');
+    return res.data as Map<String, dynamic>;
+  }
+
+  // ── Personas ──────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getPersonas() async {
+    final res = await _dio.get('/personas');
+    return (res.data as List<dynamic>)
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> getActivePersona() async {
+    final res = await _dio.get('/personas/me');
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<void> setActivePersona(String personaId) async {
+    await _dio.put('/personas/me', data: {'persona_id': personaId});
+  }
+
+  Future<Map<String, dynamic>> createPersona(Map<String, dynamic> data) async {
+    final res = await _dio.post('/personas', data: data);
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> updatePersona(
+    String personaId,
+    Map<String, dynamic> data,
+  ) async {
+    final res = await _dio.put('/personas/$personaId', data: data);
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<void> deletePersona(String personaId) async {
+    await _dio.delete('/personas/$personaId');
   }
 
   // ── Social: Posts ─────────────────────────────────────────────────────────
@@ -136,6 +215,51 @@ class ApiService {
       '/posts/$postId/comments',
       data: {'content': content},
     );
+    return res.data as Map<String, dynamic>;
+  }
+
+  // ── AP2: Orders & Payment Mandate ────────────────────────────────────────
+
+  Future<Map<String, dynamic>> confirmPurchase({
+    required Map<String, dynamic> cartMandate,
+    int? paymentMandateId,
+  }) async {
+    final res = await _dio.post('/chat/confirm-purchase', data: {
+      'cart_mandate': cartMandate,
+      if (paymentMandateId != null) 'payment_mandate_id': paymentMandateId,
+    },);
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getOrders({int page = 1}) async {
+    final res = await _dio.get('/orders', queryParameters: {'page': page});
+    return res.data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> cancelOrder(int orderId) async {
+    final res = await _dio.post('/orders/$orderId/cancel');
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getPaymentMandate() async {
+    final res = await _dio.get('/payment-mandate');
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> savePaymentMandate(
+      Map<String, dynamic> data,) async {
+    final res = await _dio.post('/payment-mandate', data: data);
+    return res.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> placeAgentOrder({
+    required Map<String, dynamic> cartMandate,
+    int? paymentMandateId,
+  }) async {
+    final res = await _dio.post('/orders/agent', data: {
+      'cart_mandate': cartMandate,
+      if (paymentMandateId != null) 'payment_mandate_id': paymentMandateId,
+    },);
     return res.data as Map<String, dynamic>;
   }
 

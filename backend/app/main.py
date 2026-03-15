@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.database import create_db_and_tables
 from app.core.logging_config import setup_logging
 from app.middleware.logging_middleware import LoggingMiddleware
-from app.routers import auth, recipes, chat, vision, meal_plan, social, shopping, recipes_search
+from app.routers import auth, recipes, chat, vision, meal_plan, social, shopping, recipes_search, personas, memory, orders
 
 
 @asynccontextmanager
@@ -22,6 +22,10 @@ async def lifespan(app: FastAPI):
     from app.services.rag import rag_service
     await rag_service.initialize()
     logger.info("RAG index ready | recipes={} ready={}", rag_service.recipe_count, rag_service.ready)
+    # Load persona templates from JSON files
+    from app.services.persona_service import persona_service
+    persona_service.load_all()
+    logger.info("Persona templates loaded | count={}", len(persona_service.list_all()))
     yield
     logger.info("Shutting down ChefGPT API")
 
@@ -53,6 +57,9 @@ app.include_router(recipes.router)       # POST /recipes/suggest
 app.include_router(vision.router)        # POST /ingredients/recognize
 app.include_router(meal_plan.router)     # POST /mealplan/generate
 app.include_router(chat.router)          # POST /chat/query
+app.include_router(personas.router)      # GET/PUT /personas
+app.include_router(memory.router)        # GET/POST/DELETE /memory
+app.include_router(orders.router)        # POST/GET /orders, /payment-mandate
 app.include_router(auth.router)
 
 # Community recipes + RAG search
