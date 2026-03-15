@@ -20,4 +20,7 @@ class AppConstants {
   // App Info
   static const String appName = 'ChefGPT';
   static const String appVersion = '1.0.0';
+
+  // Persona
+  static const String activePersonaKey = 'active_persona_id';
 }

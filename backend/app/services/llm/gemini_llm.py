@@ -1,7 +1,10 @@
-"""Gemini 2.5 Flash LLM provider with key rotation and Redis caching."""
+"""Gemini 2.5 Flash LLM provider with key rotation, Redis caching, and Persona injection."""
+from __future__ import annotations
+
 import json
 import re
 import time
+from typing import Optional
 
 from google import genai
 from google.genai import types
@@ -19,6 +22,16 @@ _NO_THINK = types.GenerateContentConfig(
 _FAST_THINK = types.GenerateContentConfig(
     thinking_config=types.ThinkingConfig(thinking_budget=512)
 )
+
+# Default system prompt — used when no persona is selected
+_DEFAULT_SYSTEM_PROMPT = (
+    "Bạn là ChefGPT — trợ lý nấu ăn và dinh dưỡng AI người Việt. "
+    "Trả lời ngắn gọn, thực tế, bằng tiếng Việt. "
+    "Chỉ trả lời các câu hỏi liên quan đến nấu ăn, công thức, dinh dưỡng và ẩm thực."
+)
+
+_DEFAULT_RECIPE_PREFIX = "Bạn là đầu bếp chuyên nghiệp người Việt."
+_DEFAULT_MEAL_PLAN_PREFIX = "Bạn là chuyên gia dinh dưỡng người Việt."
 
 
 class GeminiLLM(BaseLLM):
@@ -73,26 +86,35 @@ class GeminiLLM(BaseLLM):
     # ── Public methods ─────────────────────────────────────────────────────────
 
     async def suggest_recipes(
-        self, ingredients: list[str], filters: list[str] | None = None
+        self,
+        ingredients: list[str],
+        filters: list[str] | None = None,
+        persona=None,
     ) -> dict:
         from app.core.config import settings
         from app.services.rag import rag_service
 
         t_total = time.perf_counter()
         _filters = filters or []
+        persona_id = persona.persona_id if persona else "default"
+
         logger.info(
-            "suggest_recipes | ingredients_count={} ingredients={} filters={}",
-            len(ingredients), ingredients, _filters,
+            "suggest_recipes | ingredients_count={} ingredients={} filters={} persona={}",
+            len(ingredients), ingredients, _filters, persona_id,
         )
 
+        # Cache key includes persona_id
         cache_key = CacheService.make_key(
-            "recipes", ingredients=sorted(ingredients), filters=sorted(_filters)
+            "recipes",
+            ingredients=sorted(ingredients),
+            filters=sorted(_filters),
+            persona_id=persona_id,
         )
         cached = await self._cache.get(cache_key)
         if cached:
             logger.info(
-                "suggest_recipes | cache=HIT key_suffix={} dishes_count={}",
-                cache_key[-12:], len(cached.get("dishes", [])),
+                "suggest_recipes | cache=HIT key_suffix={} dishes_count={} persona={}",
+                cache_key[-12:], len(cached.get("dishes", [])), persona_id,
             )
             return cached
 
@@ -103,9 +125,13 @@ class GeminiLLM(BaseLLM):
             round((time.perf_counter() - t_rag) * 1000, 1), bool(rag_context), len(rag_context),
         )
 
+        # Build persona-aware prompt
+        recipe_prefix = (persona.recipe_prefix if persona and persona.recipe_prefix
+                         else _DEFAULT_RECIPE_PREFIX)
         filters_str = ", ".join(_filters) if _filters else "không có"
         rag_block = f"\n{rag_context}\n" if rag_context else ""
-        prompt = f"""Bạn là đầu bếp chuyên nghiệp người Việt.
+
+        prompt = f"""{recipe_prefix}
 {rag_block}
 Nguyên liệu có sẵn: {", ".join(ingredients)}
 Yêu cầu/sở thích: {filters_str}
@@ -139,8 +165,8 @@ Trả về JSON với cấu trúc sau (không có text ngoài JSON):
 
         total_ms = round((time.perf_counter() - t_total) * 1000, 1)
         logger.info(
-            "suggest_recipes | cache=MISS dishes_count={} dishes={} rag_used={} total_latency={}ms ttl={}s",
-            len(dishes), dish_names, bool(rag_context), total_ms, settings.cache_ttl_recipes,
+            "suggest_recipes | cache=MISS dishes_count={} dishes={} rag_used={} persona={} total_latency={}ms ttl={}s",
+            len(dishes), dish_names, bool(rag_context), persona_id, total_ms, settings.cache_ttl_recipes,
         )
         return result
 
@@ -169,26 +195,46 @@ Trả về JSON với cấu trúc sau (không có text ngoài JSON):
         )
         return result
 
-    async def generate_meal_plan(self, goal: str, days: int, calories_target: int) -> dict:
+    async def generate_meal_plan(
+        self,
+        goal: str,
+        days: int,
+        calories_target: int,
+        persona=None,
+        user_note: Optional[str] = None,
+    ) -> dict:
         from app.core.config import settings
 
         t_total = time.perf_counter()
+        persona_id = persona.persona_id if persona else "default"
+
         logger.info(
-            "generate_meal_plan | goal={} days={} calories_target={}",
-            goal, days, calories_target,
+            "generate_meal_plan | goal={} days={} calories_target={} persona={} has_user_note={}",
+            goal, days, calories_target, persona_id, bool(user_note),
         )
 
-        cache_key = CacheService.make_key(
-            "mealplan", goal=goal, days=days, calories_target=calories_target
-        )
-        cached = await self._cache.get(cache_key)
-        if cached:
-            plan_days = len(cached.get("plan", []))
-            logger.info(
-                "generate_meal_plan | cache=HIT key_suffix={} plan_days={}",
-                cache_key[-12:], plan_days,
+        # Caching strategy:
+        # - user_note is free-text → skip cache (too personalized, near-zero hit rate)
+        # - without user_note → cache normally with persona_id in key
+        cache_key = None
+        if not user_note:
+            # Sort persona IDs so order doesn't matter for cache hit
+            sorted_persona_ids = sorted(persona_id.split("+")) if persona_id != "default" else ["default"]
+            cache_key = CacheService.make_key(
+                "mealplan",
+                goal=goal,
+                days=days,
+                calories_target=calories_target,
+                persona_ids=sorted_persona_ids,
             )
-            return cached
+            cached = await self._cache.get(cache_key)
+            if cached:
+                plan_days = len(cached.get("plan", []))
+                logger.info(
+                    "generate_meal_plan | cache=HIT key_suffix={} plan_days={} persona={}",
+                    cache_key[-12:], plan_days, persona_id,
+                )
+                return cached
 
         goal_map = {
             "eat_clean": "ăn sạch, lành mạnh",
@@ -199,10 +245,20 @@ Trả về JSON với cấu trúc sau (không có text ngoài JSON):
         }
         goal_vi = goal_map.get(goal, goal)
 
-        prompt = f"""Bạn là chuyên gia dinh dưỡng người Việt.
+        # Build persona-aware prompt
+        meal_plan_prefix = (persona.meal_plan_prefix if persona and persona.meal_plan_prefix
+                            else _DEFAULT_MEAL_PLAN_PREFIX)
+
+        # user_note block — appended after main prompt
+        user_note_block = (
+            f"\n\nYêu cầu đặc biệt từ người dùng (bắt buộc phải tuân theo): {user_note.strip()}"
+            if user_note else ""
+        )
+
+        prompt = f"""{meal_plan_prefix}
 
 Tạo thực đơn {days} ngày cho mục tiêu: {goal_vi}
-Mục tiêu calories mỗi ngày: {calories_target} kcal
+Mục tiêu calories mỗi ngày: {calories_target} kcal{user_note_block}
 
 Trả về JSON (không có text ngoài JSON):
 {{
@@ -235,29 +291,41 @@ Trả về JSON (không có text ngoài JSON):
 
         plan_days = len(result.get("plan", []))
         nutrition = result.get("nutrition_summary", {})
-        await self._cache.set(cache_key, result, settings.cache_ttl_meal_plans)
+
+        # Only cache if no user_note
+        if cache_key:
+            await self._cache.set(cache_key, result, settings.cache_ttl_meal_plans)
 
         total_ms = round((time.perf_counter() - t_total) * 1000, 1)
         logger.info(
-            "generate_meal_plan | cache=MISS plan_days={} avg_calories={} avg_protein={}g avg_carbs={}g avg_fat={}g total_latency={}ms",
+            "generate_meal_plan | cache={} plan_days={} avg_calories={} avg_protein={}g persona={} cached={} total_latency={}ms",
+            "MISS" if cache_key else "SKIP(user_note)",
             plan_days,
             nutrition.get("avg_calories", "?"),
             nutrition.get("avg_protein", "?"),
-            nutrition.get("avg_carbs", "?"),
-            nutrition.get("avg_fat", "?"),
+            persona_id,
+            bool(cache_key),
             total_ms,
         )
         return result
 
-    async def chat(self, message: str, history: list[dict] | None = None) -> str:
+    async def chat(
+        self,
+        message: str,
+        history: list[dict] | None = None,
+        persona=None,
+    ) -> str:
         history_turns = len(history) if history else 0
-        logger.info("chat | message_len={} history_turns={}", len(message), history_turns)
-
-        system_prompt = (
-            "Bạn là ChefGPT — trợ lý nấu ăn và dinh dưỡng AI người Việt. "
-            "Trả lời ngắn gọn, thực tế, bằng tiếng Việt. "
-            "Chỉ trả lời các câu hỏi liên quan đến nấu ăn, công thức, dinh dưỡng và ẩm thực."
+        persona_id = persona.persona_id if persona else "default"
+        logger.info(
+            "chat | message_len={} history_turns={} persona={}",
+            len(message), history_turns, persona_id,
         )
+
+        # Use persona system prompt if available, else default
+        system_prompt = (persona.system_prompt if persona and persona.system_prompt
+                         else _DEFAULT_SYSTEM_PROMPT)
+
         genai_history = []
         if history:
             for msg in history:
@@ -280,7 +348,41 @@ Trả về JSON (không có text ngoài JSON):
         reply_text = response.text
 
         logger.info(
-            "chat | response_len={} latency={}ms",
-            len(reply_text), round((time.perf_counter() - t0) * 1000, 1),
+            "chat | response_len={} persona={} latency={}ms",
+            len(reply_text), persona_id, round((time.perf_counter() - t0) * 1000, 1),
         )
         return reply_text
+
+    async def extract_memory_facts(self, user_message: str) -> list[dict]:
+        """
+        Extract factual food-related memory items from a user message.
+        Uses thinking_budget=0 (fastest / cheapest call).
+        Returns [] if the message contains no personal facts.
+        """
+        from app.services.memory_service import _EXTRACT_PROMPT
+
+        if not user_message or len(user_message.strip()) < 5:
+            return []
+
+        prompt = _EXTRACT_PROMPT.format(message=user_message.strip())
+
+        async def _fn(client, p):
+            return await client.aio.models.generate_content(
+                model=_MODEL, contents=p, config=_NO_THINK
+            )
+
+        try:
+            response = await self._call(_fn, prompt, operation="extract_memory")
+            raw = self._parse_json(response.text)
+            if not isinstance(raw, list):
+                return []
+            facts = [f for f in raw if isinstance(f, dict)]
+            logger.debug(
+                "extract_memory | message_len={} facts_found={}",
+                len(user_message), len(facts),
+            )
+            return facts
+        except Exception as e:
+            # Extraction is best-effort — never let it break the chat flow
+            logger.warning("extract_memory | parse_error={}", str(e)[:100])
+            return []

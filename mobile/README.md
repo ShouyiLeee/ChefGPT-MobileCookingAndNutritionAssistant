@@ -1,176 +1,193 @@
 # ChefGPT Mobile App
 
-AI-powered mobile cooking and nutrition assistant built with Flutter.
-
-## Features
-
-- **AI Chatbot**: Intelligent cooking assistant powered by GPT-4.1/Claude
-- **Recipe Discovery**: Search and browse thousands of recipes
-- **Ingredient Recognition**: Use your camera to identify ingredients
-- **Meal Planning**: Auto-generate weekly meal plans
-- **Shopping Lists**: Smart grocery list management
-- **Social Feed**: Share recipes and connect with community
-- **Nutrition Tracking**: Monitor calories and macros
+Flutter app trợ lý nấu ăn và dinh dưỡng AI, kết nối với ChefGPT FastAPI backend.
 
 ## Tech Stack
 
-- **Framework**: Flutter 3.0+
-- **State Management**: Riverpod
-- **Networking**: Dio + Retrofit
-- **Routing**: GoRouter
-- **Backend**: FastAPI (separate repository)
-- **Database**: PostgreSQL + pgvector (via backend)
-- **Auth**: Supabase Auth
-- **Storage**: Supabase Storage
+| Layer | Công nghệ |
+|-------|-----------|
+| Framework | Flutter 3.x |
+| State Management | Riverpod (flutter_riverpod) |
+| Networking | Dio |
+| Navigation | GoRouter |
+| Storage | flutter_secure_storage |
+| Image | image_picker |
 
-## Project Structure
+## Tính năng
+
+| Feature | Mô tả |
+|---------|-------|
+| AI Chat | Chat với trợ lý nấu ăn, persona thay đổi phong cách trả lời |
+| Recipe Suggestion | Nhập nguyên liệu text hoặc chụp ảnh → AI gợi ý 3 món |
+| Meal Planner | Tạo thực đơn tuần theo mục tiêu |
+| AI Persona | Chọn hoặc tạo custom AI persona (Đầu bếp Á, Âu, Dinh dưỡng, ...) |
+| User Memory | Xem và quản lý dị ứng, sở thích mà AI đã học được |
+| Profile | Quản lý tài khoản, persona, memory |
+| Grocery | Mock danh sách mua sắm |
+| Social | Mock feed bài đăng công thức |
+
+## Cấu trúc thư mục
 
 ```
 lib/
-├── core/                    # Core utilities and configuration
-│   ├── constants/          # App constants and API endpoints
-│   ├── network/            # API client and network layer
-│   ├── router/             # Navigation and routing
-│   ├── theme/              # App theme and colors
-│   └── utils/              # Utility functions
-├── features/               # Feature modules
-│   ├── auth/              # Authentication
-│   ├── chat/              # AI Chatbot
-│   ├── recipes/           # Recipe management
-│   ├── meal_plan/         # Meal planning
-│   ├── shopping_list/     # Shopping list
-│   ├── social/            # Social feed
-│   └── profile/           # User profile
-└── shared/                # Shared components
-    ├── models/           # Data models
-    └── widgets/          # Reusable widgets
+├── core/
+│   ├── constants/
+│   │   └── app_constants.dart     # baseUrl, storage keys, ...
+│   ├── network/
+│   │   └── api_service.dart       # Dio client — tất cả API calls
+│   ├── router/
+│   │   └── app_router.dart        # GoRouter config
+│   ├── theme/
+│   │   └── app_colors.dart        # Color palette
+│   └── navigation/
+│       └── main_navigation.dart   # Bottom navigation bar (5 tabs)
+├── features/
+│   ├── auth/
+│   │   ├── domain/auth_state.dart         # AuthState + AuthNotifier
+│   │   └── presentation/
+│   │       ├── login_screen.dart
+│   │       └── signup_screen.dart
+│   ├── chat/
+│   │   └── presentation/chat_screen.dart  # AI chat + PersonaChip trên AppBar
+│   ├── recipes/
+│   │   └── presentation/recipes_screen.dart
+│   ├── meal_plan/
+│   │   └── presentation/meal_plan_screen.dart
+│   ├── persona/
+│   │   ├── data/
+│   │   │   ├── persona_repository.dart    # GET/POST/PUT/DELETE /personas
+│   │   │   └── persona_form_data.dart     # DTO cho create/update
+│   │   ├── domain/
+│   │   │   ├── persona_model.dart         # PersonaModel + canEdit()
+│   │   │   └── persona_state.dart         # PersonaState + PersonaNotifier
+│   │   └── presentation/
+│   │       ├── persona_selection_screen.dart  # Grid chọn persona + FAB tạo mới
+│   │       └── persona_form_screen.dart       # Form tạo/chỉnh sửa custom persona
+│   ├── memory/
+│   │   ├── data/memory_repository.dart        # GET/POST/DELETE /memory/me
+│   │   ├── domain/
+│   │   │   ├── memory_model.dart              # MemoryModel + MemoryCategory
+│   │   │   └── memory_state.dart              # MemoryState + MemoryNotifier
+│   │   └── presentation/memory_screen.dart    # Grouped list + swipe-to-delete
+│   ├── grocery/
+│   │   └── presentation/grocery_screen.dart
+│   ├── social/
+│   │   └── presentation/social_screen.dart
+│   └── profile/
+│       └── presentation/profile_screen.dart   # Persona + Memory menu items
+└── main.dart
 ```
 
-## Getting Started
+## Routes
 
-### Prerequisites
+| Path | Screen | Auth |
+|------|--------|------|
+| `/login` | LoginScreen | No |
+| `/signup` | SignupScreen | No |
+| `/home` | ChatScreen | Yes |
+| `/recipes` | RecipesScreen | Yes |
+| `/mealplan` | MealPlanScreen | Yes |
+| `/grocery` | GroceryScreen | Yes |
+| `/social` | SocialScreen | Yes |
+| `/profile` | ProfileScreen | Yes |
+| `/persona-select` | PersonaSelectionScreen | Yes |
+| `/memory` | MemoryScreen | Yes |
 
-- Flutter SDK 3.0 or higher
-- Dart SDK 3.0 or higher
-- Android Studio / VS Code with Flutter extensions
-- iOS development: Xcode (macOS only)
+## Cài đặt và chạy
 
-### Installation
+### Yêu cầu
 
-1. Clone the repository:
+- Flutter SDK 3.x
+- Dart SDK 3.x
+- Android Studio / VS Code với Flutter extension
+- ChefGPT backend đang chạy tại `http://localhost:8000`
+
+### Chạy app
+
 ```bash
-git clone https://github.com/yourusername/chefgpt.git
-cd chefgpt/mobile
-```
-
-2. Install dependencies:
-```bash
+cd mobile
 flutter pub get
-```
-
-3. Generate code (for models and API):
-```bash
-flutter pub run build_runner build --delete-conflicting-outputs
-```
-
-4. Set up environment variables:
-Create a `.env` file in the root directory:
-```
-API_BASE_URL=https://api.chefgpt.app
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-5. Run the app:
-```bash
 flutter run
 ```
 
-## Building for Production
+> **Không có code generation** — project dùng manual `fromJson`/`toJson`. Không cần chạy `build_runner`.
 
-### Android
+### Build APK
+
 ```bash
+flutter build apk --debug
+# hoặc release
 flutter build apk --release
-# or for App Bundle
-flutter build appbundle --release
 ```
 
-### iOS
-```bash
-flutter build ios --release
-```
+## Cấu hình Backend URL
 
-## Code Generation
+Đổi `baseUrl` trong `lib/core/constants/app_constants.dart`:
 
-This project uses code generation for:
-- JSON serialization (`json_serializable`)
-- API clients (`retrofit`)
-- Riverpod providers (`riverpod_generator`)
-
-Run the following command when you modify models or API definitions:
-```bash
-flutter pub run build_runner watch --delete-conflicting-outputs
-```
-
-## Testing
-
-Run unit tests:
-```bash
-flutter test
-```
-
-Run widget tests:
-```bash
-flutter test --coverage
-```
-
-## API Integration
-
-The app connects to the ChefGPT backend API. Key endpoints:
-
-- `/auth/*` - Authentication
-- `/chat/query` - AI chatbot
-- `/recipes/*` - Recipe management
-- `/ingredients/recognize` - Image recognition
-- `/mealplan/generate` - Meal planning
-- `/shopping-list/*` - Shopping list management
-- `/posts/*` - Social feed
-
-## Configuration
-
-### Backend URL
-Update the base URL in `lib/core/constants/app_constants.dart`:
 ```dart
-static const String baseUrl = 'https://your-api-url.com';
+// Android emulator
+static const String baseUrl = 'http://10.0.2.2:8000';
+
+// Android thật hoặc iOS (cùng WiFi)
+static const String baseUrl = 'http://192.168.x.x:8000';
+
+// iOS Simulator
+static const String baseUrl = 'http://localhost:8000';
 ```
 
-### Firebase Setup
-1. Create a Firebase project
-2. Add your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-3. Initialize Firebase in `main.dart`
+## API Client
 
-### Supabase Setup
-1. Create a Supabase project
-2. Update credentials in `main.dart`:
-```dart
-await Supabase.initialize(
-  url: 'YOUR_SUPABASE_URL',
-  anonKey: 'YOUR_SUPABASE_ANON_KEY',
-);
-```
+Tất cả API calls đi qua `ApiService` (`lib/core/network/api_service.dart`) — plain Dio, không Retrofit.
 
-## Contributing
+Token tự động gắn vào header qua interceptor. 401 → tự động thử refresh token → redirect login nếu thất bại.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## State Management (Riverpod)
 
-## License
+| Provider | File | Quản lý |
+|----------|------|---------|
+| `authProvider` | `auth/domain/auth_state.dart` | Login, token, user info |
+| `personaProvider` | `persona/domain/persona_state.dart` | Danh sách personas, active persona |
+| `memoryProvider` | `memory/domain/memory_state.dart` | User memories |
 
-This project is proprietary software for internal development and research.
+### Persona persistence
 
-## Support
+Khi app khởi động:
+1. Đọc `active_persona_id` từ `FlutterSecureStorage` → hiển thị chip ngay lập tức (no network wait)
+2. Background fetch danh sách đầy đủ từ server
+3. Resolve persona đầy đủ từ list
 
-For issues and questions, please contact the development team.
+### Memory
+
+- Load khi vào `MemoryScreen`
+- Swipe-to-delete (Dismissible) với optimistic update + rollback nếu API lỗi
+- Pull-to-refresh
+
+## Persona System
+
+**Chọn persona**: `PersonaSelectionScreen` — grid 2 cột, persona active có border + check icon.
+
+**Tạo custom persona**: FAB "Tạo mới" → `PersonaFormScreen` với:
+- Live preview card cập nhật real-time
+- Color picker (10 preset colors)
+- System prompt, recipe prefix, meal plan prefix
+- Quick actions (tối đa 6, add/remove)
+- isPublic toggle
+
+**Edit/Delete**: Long-press card → bottom sheet với Edit/Delete options (chỉ owner thấy).
+
+**PersonaChip trên ChatScreen AppBar**: Hiển thị `"${persona.icon} ${persona.name}"`, tap → bottom sheet persona grid.
+
+## Memory System
+
+`MemoryScreen` hiển thị memories grouped theo 6 categories:
+
+| Category | Icon | Label |
+|----------|------|-------|
+| `dietary` | 🚫 | Chế độ ăn |
+| `preference` | ✅ | Sở thích |
+| `aversion` | ❌ | Không thích |
+| `goal` | 🎯 | Mục tiêu |
+| `constraint` | ⚠️ | Ràng buộc |
+| `context` | 📝 | Thông tin khác |
+
+Thêm memory thủ công qua bottom sheet `_AddMemorySheet` (dropdown category + text input).

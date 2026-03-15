@@ -1,5 +1,6 @@
 """Recipe router."""
 import time
+from dataclasses import replace as dc_replace
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,7 +13,10 @@ from app.core.database import get_session
 from app.core.security import get_current_user_id
 from app.models.recipe import Recipe
 from app.schemas.recipe import RecipeCreate, RecipeListResponse, RecipeResponse
+from app.services.cache import cache_service
 from app.services.llm import llm_provider
+from app.services.memory_service import memory_service
+from app.services.persona_context import PersonaContextResolver
 
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
 
@@ -22,12 +26,14 @@ router = APIRouter(prefix="/recipes", tags=["Recipes"])
 class RecipeSuggestRequest(BaseModel):
     ingredients: List[str]
     filters: Optional[List[str]] = None
+    persona_id: Optional[str] = None  # override active persona for this request
 
 
 @router.post("/suggest")
 async def suggest_recipes(
     request: RecipeSuggestRequest,
     user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
 ):
     """Suggest dishes from given ingredients using Gemini 2.5 Flash."""
     if not request.ingredients:
@@ -36,13 +42,26 @@ async def suggest_recipes(
             detail="At least one ingredient is required",
         )
     logger.info(
-        "router:suggest_recipes | ingredients_count={} filters_count={}",
-        len(request.ingredients), len(request.filters or []),
+        "router:suggest_recipes | ingredients_count={} filters_count={} persona_id={}",
+        len(request.ingredients), len(request.filters or []), request.persona_id,
     )
     t0 = time.perf_counter()
+
+    # Resolve persona
+    resolver = PersonaContextResolver(session, cache_service)
+    persona = await resolver.resolve(user_id, request.persona_id)
+
+    # Inject user memory into recipe_prefix so suggestions respect restrictions
+    memory_block = await memory_service.get_context_block(user_id, session, cache_service)
+    if memory_block:
+        persona = dc_replace(
+            persona,
+            recipe_prefix=persona.recipe_prefix + "\n\n" + memory_block,
+        )
+
     try:
         result = await llm_provider.suggest_recipes(
-            request.ingredients, request.filters or []
+            request.ingredients, request.filters or [], persona=persona
         )
         logger.info(
             "router:suggest_recipes | ok dishes_count={} latency={}ms",

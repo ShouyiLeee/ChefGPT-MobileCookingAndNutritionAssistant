@@ -62,6 +62,31 @@ class CacheService:
         except Exception:
             return False
 
+    async def get_raw(self, key: str) -> Optional[str]:
+        """Get a raw string value (e.g. persona_id)."""
+        try:
+            r = await self._client()
+            return await r.get(key)
+        except Exception as e:
+            logger.warning("Cache get_raw failed key={}: {}", key, e)
+        return None
+
+    async def set_raw(self, key: str, value: str, ttl: int) -> None:
+        """Set a raw string value with TTL."""
+        try:
+            r = await self._client()
+            await r.set(key, value, ex=ttl)
+        except Exception as e:
+            logger.warning("Cache set_raw failed key={}: {}", key, e)
+
+    async def delete(self, key: str) -> None:
+        """Delete a key."""
+        try:
+            r = await self._client()
+            await r.delete(key)
+        except Exception as e:
+            logger.warning("Cache delete failed key={}: {}", key, e)
+
     async def ping(self) -> bool:
         try:
             r = await self._client()

@@ -2,6 +2,7 @@
 import json
 import time
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
@@ -50,6 +51,22 @@ async def _build_post_response(
         is_liked_by_me=is_liked,
         created_at=post.created_at,
     )
+
+
+# ── Mock feed (legacy alias) ───────────────────────────────────────────────────
+# Must be declared BEFORE /{post_id} routes so FastAPI doesn't treat "mock" as an int
+
+_MOCK_POSTS_PATH = Path(__file__).parent.parent / "mocks" / "posts.json"
+
+
+@router.get("/mock")
+async def get_mock_posts():
+    """Return static mock posts from posts.json (no auth required)."""
+    try:
+        posts = json.loads(_MOCK_POSTS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        posts = []
+    return {"posts": posts, "page": 1, "has_more": False}
 
 
 # ── Feed ──────────────────────────────────────────────────────────────────────

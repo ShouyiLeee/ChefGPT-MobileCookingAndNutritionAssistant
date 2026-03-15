@@ -49,3 +49,17 @@ class Profile(SQLModel, table=True):
 
     # Relationships
     user: Optional[User] = Relationship(back_populates="profile")
+
+
+class UserPersonaSetting(SQLModel, table=True):
+    """Lưu persona đang active của mỗi user và các custom overrides."""
+
+    __tablename__ = "user_persona_settings"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(foreign_key="users.id", unique=True, index=True, nullable=False)
+    active_persona_id: str = Field(default="asian_chef", nullable=False)
+    # JSON string — chỉ lưu các keys user muốn override (system/recipe_prefix/meal_plan_prefix)
+    custom_prompt_overrides: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None

@@ -1,13 +1,14 @@
 {
   "info": {
-    "name": "ChefGPT API",
-    "description": "ChefGPT — Mobile Cooking & Nutrition Assistant\nBase URL: http://localhost:8000\nDocs: http://localhost:8000/docs",
+    "name": "ChefGPT API v2",
+    "description": "ChefGPT — Mobile Cooking & Nutrition Assistant\nBase URL: http://localhost:8000\nDocs: http://localhost:8000/docs\n\n🚀 Quick Start:\n1. Gọi 'Login' → token tự động lưu vào {{access_token}}\n2. Gọi 'List Personas' để xem danh sách personas (6 hệ thống + custom)\n3. Gọi 'Set My Persona' để chọn persona\n4. Gọi các AI endpoint với persona_id để test\n5. Chat → Memory tự động học từ hội thoại của bạn\n\n📦 Sections:\n  01 Health\n  02 Auth\n  03 Mock (social/grocery)\n  04 Personas — Chọn & Tạo AI persona\n  05 AI — Recipes + Persona\n  06 AI — Chat + Persona + Memory\n  07 AI — Meal Plan + Persona\n  08 Cache Verification\n  09 Memory — Bộ nhớ người dùng",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
     { "key": "access_token", "value": "", "type": "string" },
-    { "key": "refresh_token", "value": "", "type": "string" }
+    { "key": "refresh_token", "value": "", "type": "string" },
+    { "key": "custom_persona_id", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -18,7 +19,7 @@
           "request": {
             "method": "GET",
             "url": "{{base_url}}/health",
-            "description": "Kiểm tra server có đang chạy không"
+            "description": "Kiểm tra server có đang chạy không.\nResponse bao gồm:\n  - status: ok\n  - redis: connected / unavailable\n  - llm_provider: gemini / openai / anthropic\n  - environment: development / production"
           }
         }
       ]
@@ -37,7 +38,7 @@
                   "if (json.access_token) {",
                   "  pm.collectionVariables.set('access_token', json.access_token);",
                   "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
-                  "  console.log('Tokens saved automatically!');",
+                  "  console.log('✅ Tokens saved!');",
                   "}"
                 ]
               }
@@ -49,9 +50,9 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"Nguyen Van A\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Nguyen Van A\"\n}"
             },
-            "description": "Đăng ký tài khoản. Token tự động lưu vào biến collection sau khi gọi thành công."
+            "description": "Đăng ký tài khoản mới.\nToken tự động lưu vào {{access_token}} và {{refresh_token}} sau khi thành công."
           }
         },
         {
@@ -65,7 +66,7 @@
                   "if (json.access_token) {",
                   "  pm.collectionVariables.set('access_token', json.access_token);",
                   "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
-                  "  console.log('access_token saved:', json.access_token.substring(0, 20) + '...');",
+                  "  console.log('✅ access_token saved:', json.access_token.substring(0, 20) + '...');",
                   "}"
                 ]
               }
@@ -77,9 +78,9 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
             },
-            "description": "Đăng nhập. access_token và refresh_token tự động lưu vào biến {{access_token}} và {{refresh_token}}."
+            "description": "Đăng nhập.\naccess_token hết hạn sau 1 giờ.\nrefresh_token hết hạn sau 7 ngày."
           }
         },
         {
@@ -92,7 +93,7 @@
                   "const json = pm.response.json();",
                   "if (json.access_token) {",
                   "  pm.collectionVariables.set('access_token', json.access_token);",
-                  "  console.log('access_token refreshed!');",
+                  "  console.log('✅ access_token refreshed!');",
                   "}"
                 ]
               }
@@ -106,7 +107,7 @@
               "mode": "raw",
               "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
             },
-            "description": "Lấy access_token mới khi token cũ hết hạn (1 giờ). Dùng refresh_token (hết hạn sau 7 ngày)."
+            "description": "Lấy access_token mới khi token cũ hết hạn."
           }
         },
         {
@@ -142,10 +143,169 @@
       ]
     },
     {
-      "name": "04. AI — Recipes (Gemini ~30-120s)",
+      "name": "04. Personas — Nhân vật AI ✨",
+      "description": "Quản lý AI Persona — mỗi persona thay đổi system prompt, phong cách trả lời, và quick actions.\n\n📦 6 personas hệ thống (is_system=true):\n  🍜 asian_chef       — Đầu bếp Á (mặc định)\n  🥐 european_chef    — Đầu bếp Âu\n  🔬 nutrition_expert — Chuyên gia Dinh dưỡng\n  🌱 vegan_chef       — Đầu bếp Chay\n  🏠 home_chef        — Đầu bếp Gia đình\n  💪 fitness_coach    — Fitness Coach\n\n🛠️ Custom personas (is_system=false):\n  - User/operator có thể tạo thêm persona riêng\n  - Có thể public (mọi user thấy) hoặc private\n  - Hỗ trợ full config: system_prompt, recipe/meal_plan prefix, quick_actions\n\nFlow cơ bản:\n1. List Personas → xem tất cả\n2. Create Custom Persona → tạo mới\n3. Set My Persona → chọn persona (system hoặc custom)\n4. Get My Persona → verify\n5. Test AI endpoints với persona đó",
       "item": [
         {
-          "name": "Suggest Recipes — Gợi ý món ăn",
+          "name": "List All Personas — Tất cả (system + custom)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Trả về:\n  - 6 system personas (is_system=true)\n  - Custom personas public\n  - Custom personas của chính user (dù private)\n\nKhông truyền auth → chỉ trả về 6 system personas + public custom personas.\n\nExpected: 200 OK — array of PersonaListItem"
+          }
+        },
+        {
+          "name": "Get Persona Detail — Chi tiết 1 persona",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas/nutrition_expert",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Chi tiết 1 persona theo ID.\n\nSystem persona IDs:\n  asian_chef, european_chef, nutrition_expert,\n  vegan_chef, home_chef, fitness_coach\n\nCustom persona IDs (dạng): custom_ten-nhan-vat_abc123\n\nOwner nhìn thấy prompts đầy đủ.\nNgười khác không thấy prompts.\n404 nếu ID không tồn tại hoặc không có quyền."
+          }
+        },
+        {
+          "name": "Get My Active Persona — Persona đang dùng",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Persona đang active của user hiện tại.\nLần đầu (chưa set) → asian_chef (mặc định).\n\nExpected: 200 OK\n{\n  \"active_persona_id\": \"asian_chef\",\n  \"persona\": { \"id\": \"asian_chef\", \"name\": \"Đầu bếp Á\", ... },\n  \"has_custom_overrides\": false\n}"
+          }
+        },
+        {
+          "name": "Set My Persona — Chọn persona",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "  console.log('✅ Persona set to:', json.active_persona_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/personas/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"persona_id\": \"nutrition_expert\"\n}"
+            },
+            "description": "Đặt active persona.\npersona_id: ID system persona hoặc custom persona slug.\n\nExpected: 200 OK\n{\n  \"active_persona_id\": \"nutrition_expert\",\n  \"persona\": { ... },\n  \"has_custom_overrides\": false\n}"
+          }
+        },
+        {
+          "name": "Set My Persona — Với custom override",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/personas/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"persona_id\": \"home_chef\",\n  \"custom_overrides\": {\n    \"system\": \"Bạn là ChefGPT — người bạn nấu ăn siêu đơn giản. Chỉ nói chuyện thân mật kiểu bạn bè, dùng emoji thoải mái 😄, và luôn ưu tiên công thức nấu trong 15 phút.\",\n    \"recipe_prefix\": \"Gợi ý món cực kỳ đơn giản, tối đa 5 nguyên liệu, nấu xong trong 15 phút.\"\n  }\n}"
+            },
+            "description": "Chọn persona + ghi đè một phần prompt.\n\ncustom_overrides keys:\n  - system          (system prompt)\n  - recipe_prefix\n  - meal_plan_prefix\n\nExpected: 200 OK, has_custom_overrides = true"
+          }
+        },
+        {
+          "name": "Reset Custom Overrides — Về mặc định",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/personas/me/overrides",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Xóa toàn bộ custom_overrides của user.\nGiữ nguyên persona đang chọn, quay về prompt mặc định.\n\nExpected: 204 No Content"
+          }
+        },
+        {
+          "name": "Create Custom Persona — Tạo persona mới",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (pm.response.code === 201 && json.id) {",
+                  "  pm.collectionVariables.set('custom_persona_id', json.id);",
+                  "  console.log('✅ Custom persona created! ID:', json.id);",
+                  "  console.log('   Saved to {{custom_persona_id}} for later use');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/personas",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Đầu bếp Miền Trung\",\n  \"description\": \"Chuyên gia ẩm thực miền Trung Việt Nam — Huế, Đà Nẵng, Hội An\",\n  \"icon\": \"🌶️\",\n  \"color\": \"#EF4444\",\n  \"system_prompt\": \"Bạn là ChefGPT — chuyên gia ẩm thực miền Trung Việt Nam. Bạn hiểu sâu về các món đặc sản Huế (bún bò, bánh khoái, cơm hến), Đà Nẵng (mì Quảng, bánh xèo), và Hội An (cao lầu, cơm gà). Ưu tiên hương vị đậm đà, cay nồng, và kỹ thuật nấu truyền thống miền Trung.\",\n  \"recipe_prefix\": \"Ưu tiên các món đặc sản miền Trung Việt Nam — Huế, Đà Nẵng, Hội An, Quảng Nam. Đặc trưng: cay, mặn, đậm đà, nước chấm phức tạp.\",\n  \"meal_plan_prefix\": \"Tạo thực đơn theo phong cách ẩm thực miền Trung. Cân bằng các món Huế, Đà Nẵng, Hội An. Chú ý khẩu phần vừa phải, ưu tiên nguyên liệu tươi địa phương.\",\n  \"cuisine_filters\": [\"vietnamese\", \"central_vietnamese\"],\n  \"quick_actions\": [\n    \"Công thức bún bò Huế chuẩn vị\",\n    \"Cách làm bánh xèo miền Trung\",\n    \"Mì Quảng ngon nhất Đà Nẵng\"\n  ],\n  \"is_public\": true\n}"
+            },
+            "description": "Tạo custom persona mới.\nID tự động sinh: custom_{name_slug}_{uuid[:6]}\nVD: custom_dau-bep-mien-trung_a1b2c3\n\nID tự động lưu vào {{custom_persona_id}} khi tạo thành công.\n\nFields:\n  name*         — Tên persona (bắt buộc)\n  description   — Mô tả ngắn\n  icon          — Emoji icon\n  color         — Mã màu hex (#RRGGBB)\n  system_prompt — Hướng dẫn hệ thống cho AI\n  recipe_prefix — Prefix prompt gợi ý món\n  meal_plan_prefix — Prefix prompt tạo thực đơn\n  cuisine_filters  — Mảng filter ẩm thực\n  quick_actions    — Tối đa 6 gợi ý nhanh\n  is_public        — Cho phép user khác thấy và dùng\n\nExpected: 201 Created"
+          }
+        },
+        {
+          "name": "Get Custom Persona Detail — Xem persona vừa tạo",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas/{{custom_persona_id}}",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Xem chi tiết custom persona vừa tạo.\n{{custom_persona_id}} tự động điền sau bước Create.\n\nOwner nhìn thấy cả prompts block.\nUser khác chỉ thấy metadata."
+          }
+        },
+        {
+          "name": "Set My Persona — Dùng custom persona vừa tạo",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/personas/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"persona_id\": \"{{custom_persona_id}}\"\n}"
+            },
+            "description": "Chọn custom persona vừa tạo.\nHoạt động giống system persona — inject vào chat/recipes/mealplan."
+          }
+        },
+        {
+          "name": "Update Custom Persona — Chỉnh sửa",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/personas/{{custom_persona_id}}",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Chuyên gia ẩm thực miền Trung — đặc biệt về món Huế cung đình\",\n  \"system_prompt\": \"Bạn là ChefGPT — chuyên gia ẩm thực Huế cung đình. Bạn am hiểu lịch sử và kỹ thuật của từng món ăn trong mâm cơm Huế hoàng gia...\",\n  \"quick_actions\": [\n    \"Kể về lịch sử bún bò Huế\",\n    \"Cách làm bánh khoái Huế\",\n    \"Mâm cơm Huế hoàng gia gồm những gì?\"\n  ]\n}"
+            },
+            "description": "Cập nhật một phần custom persona (PATCH-like).\nChỉ owner mới update được. System personas bị block (403).\n\nTất cả fields đều optional — chỉ truyền fields muốn thay đổi.\n\nExpected: 200 OK — persona sau khi update"
+          }
+        },
+        {
+          "name": "Delete Custom Persona — Xóa",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/personas/{{custom_persona_id}}",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Xóa (soft delete) custom persona.\nChỉ owner mới xóa được. System personas bị block (403).\n\nNếu persona đang là active persona của user nào đó → họ sẽ fallback về default.\n\nExpected: 204 No Content"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. AI — Recipes + Persona (~30-120s)",
+      "description": "Gợi ý món ăn với persona injection.\n\nThêm 'persona_id' để override cho request này.\nKhông truyền → dùng persona user đã set.\n\n⚠️ AI response có thể mất 30–120 giây (Gemini thinking mode).\nPostman: Settings → Request timeout → đặt 180000 ms",
+      "item": [
+        {
+          "name": "Suggest Recipes — Mặc định",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/recipes/suggest",
@@ -153,13 +313,83 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\", \"hành lá\"],\n  \"filters\": [\"ít dầu\", \"nhanh\"]\n}"
+              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\", \"hành lá\"],\n  \"filters\": [\"ít dầu\"]\n}"
             },
-            "description": "Gợi ý 3 món ăn từ nguyên liệu có sẵn.\nGemini 2.5 Flash — có thể mất 30-120 giây.\nfilters tuỳ chọn: ít dầu, chay, keto, không cay, v.v."
+            "description": "Dùng persona đang active.\nLần 1: cache MISS (~30-120s).\nLần 2 cùng params + persona: cache HIT (<1s)."
           }
         },
         {
-          "name": "Recognize Ingredients — Nhận dạng nguyên liệu từ ảnh",
+          "name": "Suggest Recipes — Persona: Đầu bếp Á 🍜",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"thịt bò\", \"sả\", \"gừng\", \"nước mắm\"],\n  \"filters\": [],\n  \"persona_id\": \"asian_chef\"\n}"
+            },
+            "description": "Phong cách Á — ưu tiên món Việt/Nhật/Hàn, kỹ thuật truyền thống, cân bằng 5 vị."
+          }
+        },
+        {
+          "name": "Suggest Recipes — Persona: Đầu bếp Âu 🥐",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"thịt bò\", \"sả\", \"gừng\", \"nước mắm\"],\n  \"filters\": [],\n  \"persona_id\": \"european_chef\"\n}"
+            },
+            "description": "Cùng nguyên liệu với asian_chef — persona Âu gợi ý theo kỹ thuật cổ điển Pháp/Ý.\n\n💡 So sánh 2 responses để thấy sự khác biệt phong cách."
+          }
+        },
+        {
+          "name": "Suggest Recipes — Persona: Đầu bếp Chay 🌱",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"đậu phụ\", \"nấm hương\", \"cải bó xôi\", \"gừng\"],\n  \"filters\": [\"chay\"],\n  \"persona_id\": \"vegan_chef\"\n}"
+            },
+            "description": "Persona thuần chay — không thịt, không trứng, không sữa.\nGiải thích cách thay thế protein thực vật."
+          }
+        },
+        {
+          "name": "Suggest Recipes — Persona: Fitness Coach 💪",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"ức gà\", \"trứng\", \"gạo lứt\", \"bông cải xanh\"],\n  \"filters\": [],\n  \"persona_id\": \"fitness_coach\"\n}"
+            },
+            "description": "Ưu tiên macro cao protein, thông tin dinh dưỡng chính xác, timing ăn quanh tập."
+          }
+        },
+        {
+          "name": "Suggest Recipes — Custom Persona",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"thịt heo\", \"sả\", \"mắm ruốc\"],\n  \"filters\": [],\n  \"persona_id\": \"{{custom_persona_id}}\"\n}"
+            },
+            "description": "Dùng custom persona vừa tạo ở section 04.\n{{custom_persona_id}} tự động điền nếu đã chạy bước Create trước đó."
+          }
+        },
+        {
+          "name": "Recognize Ingredients — Nhận dạng từ ảnh",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/ingredients/recognize",
@@ -171,20 +401,21 @@
                   "key": "image",
                   "type": "file",
                   "src": "",
-                  "description": "Chọn file ảnh (JPG/PNG) chứa nguyên liệu"
+                  "description": "Chọn file ảnh JPG/PNG chứa nguyên liệu"
                 }
               ]
             },
-            "description": "Upload ảnh thực phẩm → Gemini Vision nhận dạng và trả về danh sách nguyên liệu."
+            "description": "Upload ảnh → Gemini Vision nhận dạng nguyên liệu.\nKhông có persona injection (vision endpoint agnostic)."
           }
         }
       ]
     },
     {
-      "name": "05. AI — Chat (Gemini ~3-10s)",
+      "name": "06. AI — Chat + Persona + Memory (~3-10s)",
+      "description": "Chat với AI theo persona.\n\n🧠 Memory System:\n  - Sau mỗi chat, hệ thống tự học facts về user (background task)\n  - Memory được inject vào system_prompt mỗi lần chat\n  - Xem/quản lý memory ở section 09\n\nVí dụ: Chat 'Tôi bị dị ứng tôm' → Memory tự lưu → Lần sau gợi ý không có tôm\n\nThêm 'persona_id' để override persona cho request này.",
       "item": [
         {
-          "name": "Send Message — Gửi tin nhắn",
+          "name": "Chat — Mặc định (dùng persona + memory đã học)",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/chat/query",
@@ -194,7 +425,91 @@
               "mode": "raw",
               "raw": "{\n  \"message\": \"Gợi ý món ăn sáng đơn giản cho người bận rộn\",\n  \"session_id\": null\n}"
             },
-            "description": "Chat với ChefGPT AI.\n- session_id: null = tạo session mới, hoặc truyền ID session cũ để tiếp tục hội thoại.\nResponse: { id, message, role, timestamp }"
+            "description": "Dùng persona đang active + memory của user.\nsession_id: null = tạo session mới.\n\n📝 Sau khi gửi, background task sẽ extract facts từ tin nhắn này.\nVào section 09 để xem memory đã học được."
+          }
+        },
+        {
+          "name": "Chat — Test Memory: Khai báo dị ứng",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tôi bị dị ứng hải sản và tôm. Tôi cũng không ăn được thịt đỏ vì vấn đề sức khỏe. Mục tiêu của tôi là giảm 5kg trong 3 tháng.\",\n  \"session_id\": null\n}"
+            },
+            "description": "🧠 Test Memory extraction:\n  AI sẽ trả lời, đồng thời background task extract:\n  - dietary: allergy = hải sản, tôm\n  - aversion: food = thịt đỏ (lý do sức khỏe)\n  - goal: weight_loss = 5kg trong 3 tháng\n\nSau 1-2 giây → check section 09 'Get My Memories' để xem facts đã lưu."
+          }
+        },
+        {
+          "name": "Chat — Test Memory: AI nhớ dị ứng",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Gợi ý món hải sản ngon cho tôi đi\",\n  \"session_id\": null\n}"
+            },
+            "description": "⭐ Test Memory injection:\nDù user hỏi về hải sản, AI đã được inject memory 'dị ứng hải sản' vào system_prompt.\nExpected: AI nhắc lại dị ứng và gợi ý món thay thế phù hợp.\n\nNếu Memory hoạt động đúng: AI KHÔNG gợi ý món hải sản/tôm.\nNếu chưa học (chưa chạy bước trước): AI gợi ý bình thường."
+          }
+        },
+        {
+          "name": "Chat — Persona: Đầu bếp Á 🍜",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Cách phân biệt nước mắm ngon và nước mắm kém chất lượng?\",\n  \"session_id\": null,\n  \"persona_id\": \"asian_chef\"\n}"
+            },
+            "description": "AI trả lời theo phong cách đầu bếp châu Á."
+          }
+        },
+        {
+          "name": "Chat — Persona: Chuyên gia Dinh dưỡng 🔬",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tôi nặng 70kg, muốn giảm 1kg/tuần. Tôi cần ăn bao nhiêu calo mỗi ngày?\",\n  \"session_id\": null,\n  \"persona_id\": \"nutrition_expert\"\n}"
+            },
+            "description": "AI tính TDEE, caloric deficit, macro cụ thể theo phong cách chuyên gia dinh dưỡng.\n\n💡 So sánh với cùng câu hỏi dùng asian_chef để thấy sự khác biệt."
+          }
+        },
+        {
+          "name": "Chat — Persona: Fitness Coach 💪",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tôi tập gym lúc 6 giờ sáng. Nên ăn gì trước và sau khi tập?\",\n  \"session_id\": null,\n  \"persona_id\": \"fitness_coach\"\n}"
+            },
+            "description": "AI trả lời: pre/post workout nutrition, timing, leucine threshold."
+          }
+        },
+        {
+          "name": "Chat — Persona: Đầu bếp Gia đình 🏠",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tối nay về muộn, chỉ có trứng và mì gói ở nhà. Nấu gì ngon trong 10 phút?\",\n  \"session_id\": null,\n  \"persona_id\": \"home_chef\"\n}"
+            },
+            "description": "AI trả lời thân mật, thực tế — phong cách đầu bếp gia đình."
           }
         },
         {
@@ -203,16 +518,17 @@
             "method": "GET",
             "url": "{{base_url}}/chat/history",
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Lấy toàn bộ lịch sử chat của user hiện tại, phân theo session."
+            "description": "Lấy toàn bộ lịch sử chat của user, phân theo session."
           }
         }
       ]
     },
     {
-      "name": "06. AI — Meal Plan (Gemini ~60-120s)",
+      "name": "07. AI — Meal Plan + Persona (~60-120s)",
+      "description": "Tạo thực đơn với persona injection.\n\n⭐ Điểm đặc biệt:\n  - persona_ids: array — cho phép NHIỀU personas cùng lúc (merged)\n  - user_note: text tự do — mô tả sở thích/dị ứng cá nhân\n\n⚠️ Cache logic:\n  - Không có user_note → cache bình thường (TTL 30 phút)\n  - Có user_note → KHÔNG cache (quá cá nhân hóa)\n  - persona_ids được sort trước khi hash → ['A','B'] == ['B','A']",
       "item": [
         {
-          "name": "Generate Meal Plan — Tạo thực đơn",
+          "name": "Generate Meal Plan — Mặc định",
           "request": {
             "method": "POST",
             "url": "{{base_url}}/mealplan/generate",
@@ -222,16 +538,274 @@
               "mode": "raw",
               "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1800\n}"
             },
-            "description": "Tạo thực đơn AI bằng Gemini 2.5 Flash.\nCó thể mất 60-120 giây — tăng timeout trong Postman Settings nếu cần.\n\ngoal options:\n  - eat_clean     → Ăn sạch, lành mạnh\n  - weight_loss   → Giảm cân\n  - muscle_gain   → Tăng cơ\n  - keto          → Keto (ít carb)\n  - maintenance   → Duy trì cân nặng\n\ndays: 1–14\ncalories_target: 1000–5000"
+            "description": "Dùng persona đang active.\ngoal options: eat_clean | weight_loss | muscle_gain | keto | maintenance\n\nLần 1: cache MISS (~60-120s). Lần 2 y hệt: cache HIT (<1s)."
           }
         },
         {
-          "name": "Get Saved Plans — Danh sách thực đơn đã lưu",
+          "name": "Generate Meal Plan — 1 Persona: Dinh dưỡng 🔬",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"weight_loss\",\n  \"days\": 5,\n  \"calories_target\": 1500,\n  \"persona_ids\": [\"nutrition_expert\"]\n}"
+            },
+            "description": "Thực đơn tối ưu macro, chỉ số đường huyết, đa dạng vi chất.\nCache: YES (không có user_note)"
+          }
+        },
+        {
+          "name": "Generate Meal Plan — Multi-persona: Dinh dưỡng + Fitness 🔬💪",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 7,\n  \"calories_target\": 3000,\n  \"persona_ids\": [\"nutrition_expert\", \"fitness_coach\"]\n}"
+            },
+            "description": "⭐ MULTI-PERSONA — kết hợp 2 chuyên gia:\n  - nutrition_expert: macro chính xác, GI, vi chất\n  - fitness_coach: protein timing, pre/post workout\n\nPrompt merge: [Nutrition Expert]: ... + [Fitness Coach]: ...\nCache: YES"
+          }
+        },
+        {
+          "name": "Generate Meal Plan — Với user_note (NO CACHE) 📝",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 7,\n  \"calories_target\": 1800,\n  \"persona_ids\": [\"nutrition_expert\"],\n  \"user_note\": \"Tôi bị dị ứng hải sản và tôm. Tôi thích ăn cơm hơn bánh mì. Ăn chay vào thứ 6 mỗi tuần. Không ăn được đồ cay.\"\n}"
+            },
+            "description": "⭐ USER_NOTE — cá nhân hóa hoàn toàn.\nAI tuân theo: dị ứng, ăn chay thứ 6, không cay...\n\n⚠️ Cache: KHÔNG cache khi có user_note."
+          }
+        },
+        {
+          "name": "Generate Meal Plan — Multi-persona + user_note 🔬💪📝",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 7,\n  \"calories_target\": 2800,\n  \"persona_ids\": [\"fitness_coach\", \"asian_chef\"],\n  \"user_note\": \"Tôi tập gym 5 buổi/tuần, tập lúc 6 giờ sáng. Thích món Việt Nam. Không ăn thịt đỏ.\"\n}"
+            },
+            "description": "Fitness Coach + Asian Chef + user_note cá nhân.\nKhông cache. Result: thực đơn Việt, giàu protein, không thịt đỏ, có pre/post workout meals."
+          }
+        },
+        {
+          "name": "Generate Meal Plan — Keto + Đầu bếp Âu 🥐",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"keto\",\n  \"days\": 5,\n  \"calories_target\": 2000,\n  \"persona_ids\": [\"european_chef\"]\n}"
+            },
+            "description": "Keto theo phong cách Âu — dầu ô liu, phô mai, thịt chất lượng cao. Cache: YES"
+          }
+        },
+        {
+          "name": "Get Saved Plans — Danh sách đã lưu",
           "request": {
             "method": "GET",
             "url": "{{base_url}}/mealplan",
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Lấy danh sách tất cả thực đơn đã tạo và lưu trong DB."
+            "description": "Danh sách tất cả thực đơn đã tạo và lưu trong DB."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Cache Verification — Kiểm tra cache",
+      "description": "Verify cache behavior.\n\nCách test:\n1. Gọi request → xem log backend 'cache=MISS'\n2. Gọi lại y hệt → log 'cache=HIT', latency <50ms\n3. Đổi persona → MISS (cache key thay đổi)\n4. Có user_note → luôn MISS (không cache)",
+      "item": [
+        {
+          "name": "Cache Test: Recipe asian_chef (gọi 2 lần để thấy HIT)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\"],\n  \"filters\": [],\n  \"persona_id\": \"asian_chef\"\n}"
+            },
+            "description": "Lần 1: cache=MISS, latency 30-120s\nLần 2 (y hệt): cache=HIT, latency <50ms\n\nKiểm tra log backend: 'cache=HIT key_suffix=xxxx'"
+          }
+        },
+        {
+          "name": "Cache Test: Recipe vegan_chef (cùng nguyên liệu, cache khác)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/recipes/suggest",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\"],\n  \"filters\": [],\n  \"persona_id\": \"vegan_chef\"\n}"
+            },
+            "description": "Cùng nguyên liệu, persona khác → cache entry riêng.\nLần 1: cache=MISS (persona_id=vegan_chef → hash khác asian_chef)"
+          }
+        },
+        {
+          "name": "Cache Test: MealPlan không user_note (cacheable)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1600,\n  \"persona_ids\": [\"nutrition_expert\"]\n}"
+            },
+            "description": "Gọi 2 lần → lần 2 cache HIT.\nLog: 'cache=MISS' rồi 'cache=HIT'"
+          }
+        },
+        {
+          "name": "Cache Test: MealPlan có user_note (KHÔNG cache)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1600,\n  \"persona_ids\": [\"nutrition_expert\"],\n  \"user_note\": \"Dị ứng tôm\"\n}"
+            },
+            "description": "Gọi bao nhiêu lần cũng MISS.\nLog: 'cache=SKIP(user_note)'"
+          }
+        },
+        {
+          "name": "Cache Test: persona_ids sort order (A+B == B+A)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/mealplan/generate",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 3,\n  \"calories_target\": 2500,\n  \"persona_ids\": [\"fitness_coach\", \"nutrition_expert\"]\n}"
+            },
+            "description": "Thứ tự đảo ngược so với 'Multi-persona: Dinh dưỡng + Fitness' ở section 07.\nNhưng cả hai đều sort trước khi hash → cùng cache entry → HIT."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. Memory — Bộ nhớ người dùng 🧠",
+      "description": "Hệ thống Memory tự động học facts về user từ hội thoại.\n\n🔄 Flow hoạt động:\n  1. User chat → AI trả lời\n  2. Background task extract facts từ tin nhắn (Gemini)\n  3. Facts lưu vào DB (user_memories table)\n  4. Lần chat sau: memory được inject vào system_prompt\n  5. AI 'nhớ' thông tin của user qua các sessions\n\n📋 6 Categories:\n  🚫 dietary    — Chế độ ăn (dị ứng, kiêng khem)\n  ✅ preference — Sở thích (loại món, hương vị yêu thích)\n  ❌ aversion   — Không thích (món ghét, hương vị tránh)\n  🎯 goal       — Mục tiêu (giảm cân, tăng cơ, ăn sạch)\n  ⚠️  constraint — Ràng buộc (thời gian, ngân sách, thiết bị)\n  📝 context    — Thông tin khác (gia đình, lịch sinh hoạt)\n\n💡 Test flow:\n  1. Chat khai báo dị ứng ở section 06\n  2. Get My Memories → xem facts vừa học\n  3. Chat lại → AI đã nhớ không cần nhắc lại",
+      "item": [
+        {
+          "name": "Get My Memories — Xem tất cả memory",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Trả về:\n  - memories: danh sách tất cả facts đã học (phân loại theo category)\n  - context_preview: đoạn text được inject vào AI (preview)\n\nExpected: 200 OK\n{\n  \"memories\": [\n    {\n      \"id\": 1,\n      \"category\": \"dietary\",\n      \"key\": \"allergy\",\n      \"value\": \"hải sản và tôm\",\n      \"confidence\": 0.95,\n      \"source\": \"Tôi bị dị ứng hải sản...\"\n    }\n  ],\n  \"context_preview\": \"[Thông tin đã biết về người dùng này]\\n🚫 Chế độ ăn:\\n  • dị ứng: hải sản và tôm\\n...\"\n}"
+          }
+        },
+        {
+          "name": "Get Memory Categories — Metadata categories",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/memory/categories",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Danh sách 6 categories với icon và label.\nDùng để render UI dropdown khi thêm memory thủ công.\n\nExpected: 200 OK\n{\n  \"categories\": [\n    { \"id\": \"dietary\", \"icon\": \"🚫\", \"label\": \"Chế độ ăn\" },\n    { \"id\": \"preference\", \"icon\": \"✅\", \"label\": \"Sở thích\" },\n    ...\n  ]\n}"
+          }
+        },
+        {
+          "name": "Add Memory — Thêm thủ công",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"dietary\",\n  \"key\": \"allergy\",\n  \"value\": \"gluten\"\n}"
+            },
+            "description": "Thêm memory thủ công (không qua chat).\nDùng khi user muốn khai báo thông tin không tự động extract được.\n\nCategories: dietary | preference | aversion | goal | constraint | context\n\nExpected: 201 Created — MemoryResponse\n\nLưu ý: Không duplicate (category+key+value phải unique)."
+          }
+        },
+        {
+          "name": "Add Memory — Goal giảm cân",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"goal\",\n  \"key\": \"weight_target\",\n  \"value\": \"giảm 5kg trong 3 tháng\"\n}"
+            },
+            "description": "Thêm mục tiêu giảm cân vào memory.\nSau này AI sẽ luôn nhắc đến mục tiêu này khi gợi ý món ăn."
+          }
+        },
+        {
+          "name": "Add Memory — Sở thích món ăn",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"preference\",\n  \"key\": \"cuisine\",\n  \"value\": \"thích món Việt Nam truyền thống\"\n}"
+            },
+            "description": "Lưu sở thích ẩm thực Việt Nam."
+          }
+        },
+        {
+          "name": "Add Memory — Ràng buộc thời gian",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"constraint\",\n  \"key\": \"cooking_time\",\n  \"value\": \"chỉ có 30 phút nấu ăn mỗi bữa\"\n}"
+            },
+            "description": "Lưu ràng buộc thời gian nấu ăn.\nAI sẽ ưu tiên gợi ý các món nấu nhanh."
+          }
+        },
+        {
+          "name": "Delete Memory — Xóa 1 memory",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/memory/me/1",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Xóa (soft delete) 1 memory theo ID.\nThay '1' bằng ID thực từ kết quả 'Get My Memories'.\n\nExpected: 204 No Content"
+          }
+        },
+        {
+          "name": "Clear All Memories — Xóa toàn bộ",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/memory/me",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "description": "Xóa toàn bộ memory của user (soft delete).\nAI quay về trạng thái 'không biết gì' về user.\n\n⚠️ Không thể hoàn tác.\n\nExpected: 200 OK\n{\n  \"deleted_count\": 5,\n  \"message\": \"Đã xóa 5 memories\"\n}"
+          }
+        },
+        {
+          "name": "Chat — Verify Memory injection (sau khi add)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/chat/query",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Gợi ý thực đơn cho tuần này đi\",\n  \"session_id\": null\n}"
+            },
+            "description": "⭐ Verify Memory hoạt động:\nNếu đã add memories ở trên, AI sẽ:\n  - KHÔNG gợi ý món có gluten/hải sản (dietary allergy)\n  - ƯU TIÊN món Việt Nam (preference: cuisine)\n  - GỢI Ý món nấu nhanh <30 phút (constraint: cooking_time)\n  - NHẮC đến mục tiêu giảm 5kg (goal: weight_target)\n\nContext Preview từ 'Get My Memories' cho thấy chính xác nội dung được inject."
           }
         }
       ]
