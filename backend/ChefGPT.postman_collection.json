@@ -260,7 +260,7 @@
             "body": {
               "mode": "formdata",
               "formdata": [{
-                "key": "file",
+                "key": "image",
                 "type": "file",
                 "src": "",
                 "description": "Upload ảnh (jpg/png) chứa nguyên liệu"
