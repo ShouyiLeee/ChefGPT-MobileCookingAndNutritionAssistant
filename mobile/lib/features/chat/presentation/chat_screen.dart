@@ -129,6 +129,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           const PersonaChip(),
           IconButton(
+            icon: const Icon(Icons.psychology_outlined),
+            tooltip: 'Bộ nhớ AI',
+            onPressed: () => context.push('/memory'),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Xóa lịch sử',
             onPressed: () => ref.read(_chatMessagesProvider.notifier).clear(),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_service.dart';
 
@@ -294,6 +295,13 @@ class _StoreListView extends ConsumerWidget {
             ),
           ),
         ),
+        // ── AI Shopping Hub ─────────────────────────────────────────────
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: _AiHubCard(context: context),
+          ),
+        ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
           sliver: SliverToBoxAdapter(
@@ -318,6 +326,103 @@ class _StoreListView extends ConsumerWidget {
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
+    );
+  }
+}
+
+// ── AI Shopping Hub card ─────────────────────────────────────────────────────
+
+class _AiHubCard extends StatelessWidget {
+  final BuildContext context;
+  const _AiHubCard({required this.context});
+
+  @override
+  Widget build(BuildContext ctx) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A2E), Color(0xFF0F3460)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: const [
+            Text('🤖', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 8),
+            Text(
+              'Mua sắm thông minh với AI',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            _HubButton(
+              emoji: '💳',
+              label: 'Ví AI',
+              onTap: () => context.push('/agent-wallet'),
+            ),
+            const SizedBox(width: 10),
+            _HubButton(
+              emoji: '📦',
+              label: 'Đơn hàng',
+              onTap: () => context.push('/orders'),
+            ),
+            const SizedBox(width: 10),
+            _HubButton(
+              emoji: '🔄',
+              label: 'AP2',
+              onTap: () => context.push('/ap2-flow'),
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
+}
+
+class _HubButton extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final VoidCallback onTap;
+  const _HubButton({required this.emoji, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 20)),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
