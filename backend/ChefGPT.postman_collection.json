@@ -1,814 +1,893 @@
 {
   "info": {
-    "name": "ChefGPT API v2",
-    "description": "ChefGPT — Mobile Cooking & Nutrition Assistant\nBase URL: http://localhost:8000\nDocs: http://localhost:8000/docs\n\n🚀 Quick Start:\n1. Gọi 'Login' → token tự động lưu vào {{access_token}}\n2. Gọi 'List Personas' để xem danh sách personas (6 hệ thống + custom)\n3. Gọi 'Set My Persona' để chọn persona\n4. Gọi các AI endpoint với persona_id để test\n5. Chat → Memory tự động học từ hội thoại của bạn\n\n📦 Sections:\n  01 Health\n  02 Auth\n  03 Mock (social/grocery)\n  04 Personas — Chọn & Tạo AI persona\n  05 AI — Recipes + Persona\n  06 AI — Chat + Persona + Memory\n  07 AI — Meal Plan + Persona\n  08 Cache Verification\n  09 Memory — Bộ nhớ người dùng",
+    "name": "ChefGPT API — Full Collection",
+    "description": "Complete API test collection for ChefGPT MVP.\n\n**Quick Start:**\n1. Start backend: `cd backend && uvicorn app.main:app --reload`\n2. Run **🔐 Auth / Login** → token tự động lưu vào `{{token}}`\n3. Tất cả request còn lại dùng `{{token}}` qua Bearer Auth của collection\n\n**Sections:**\n  🔐 Auth — Signup, Login, Refresh, Logout\n  💬 Chat — Query, Shopping Intent, Confirm Purchase, History\n  🍳 Recipes — Suggest (AI), List, Save, Delete\n  📸 Vision — Nhận diện nguyên liệu từ ảnh\n  📅 Meal Plan — Generate (AI), List\n  🧠 Memory — Get, Add, Delete\n  🤖 Persona — List, Get, Set, Create, Update, Delete\n  💳 AP2 Payments — Mandate, Place Order, List, Cancel\n  🌐 Community Recipes — Browse, Search (RAG), Stats\n  👥 Social — Mock Feed, CRUD Posts, Like, Comment\n  🛒 Grocery — Mock Shopping List\n  🏥 Health — Root, Docs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000", "type": "string" },
-    { "key": "access_token", "value": "", "type": "string" },
-    { "key": "refresh_token", "value": "", "type": "string" },
-    { "key": "custom_persona_id", "value": "", "type": "string" }
+    { "key": "base_url",   "value": "http://localhost:8000", "type": "string" },
+    { "key": "token",      "value": "",                      "type": "string" },
+    { "key": "order_id",   "value": "1",                     "type": "string" },
+    { "key": "memory_id",  "value": "1",                     "type": "string" },
+    { "key": "persona_id", "value": "asian_chef",            "type": "string" },
+    { "key": "recipe_id",  "value": "1",                     "type": "string" },
+    { "key": "post_id",    "value": "1",                     "type": "string" }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
   "item": [
+
     {
-      "name": "01. Health",
+      "name": "🔐 Auth",
       "item": [
         {
-          "name": "Health Check",
+          "name": "Signup",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json();",
+            "if (r.access_token) pm.collectionVariables.set('token', r.access_token);"
+          ], "type": "text/javascript" }}],
           "request": {
-            "method": "GET",
-            "url": "{{base_url}}/health",
-            "description": "Kiểm tra server có đang chạy không.\nResponse bao gồm:\n  - status: ok\n  - redis: connected / unavailable\n  - llm_provider: gemini / openai / anthropic\n  - environment: development / production"
-          }
-        }
-      ]
-    },
-    {
-      "name": "02. Auth",
-      "item": [
-        {
-          "name": "Signup — Đăng ký",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.access_token) {",
-                  "  pm.collectionVariables.set('access_token', json.access_token);",
-                  "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
-                  "  console.log('✅ Tokens saved!');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "url": "{{base_url}}/auth/signup",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Nguyen Van A\"\n}"
-            },
-            "description": "Đăng ký tài khoản mới.\nToken tự động lưu vào {{access_token}} và {{refresh_token}} sau khi thành công."
+            "url": "{{base_url}}/auth/signup",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@chefgpt.com\",\n  \"password\": \"demo1234\",\n  \"name\": \"Demo User\"\n}" }
           }
         },
         {
-          "name": "Login — Đăng nhập",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.access_token) {",
-                  "  pm.collectionVariables.set('access_token', json.access_token);",
-                  "  pm.collectionVariables.set('refresh_token', json.refresh_token);",
-                  "  console.log('✅ access_token saved:', json.access_token.substring(0, 20) + '...');",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has access_token', () => pm.expect(r.access_token).to.be.a('string'));",
+            "pm.collectionVariables.set('token', r.access_token);",
+            "console.log('✅ Token saved. Ready to test other endpoints.');"
+          ], "type": "text/javascript" }}],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "url": "{{base_url}}/auth/login",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
-            },
-            "description": "Đăng nhập.\naccess_token hết hạn sau 1 giờ.\nrefresh_token hết hạn sau 7 ngày."
+            "url": "{{base_url}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@chefgpt.com\",\n  \"password\": \"demo1234\"\n}" }
           }
         },
         {
           "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.access_token) {",
-                  "  pm.collectionVariables.set('access_token', json.access_token);",
-                  "  console.log('✅ access_token refreshed!');",
-                  "}"
-                ]
-              }
-            }
-          ],
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "if (r.access_token) pm.collectionVariables.set('token', r.access_token);"
+          ], "type": "text/javascript" }}],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/auth/refresh",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
-            },
-            "description": "Lấy access_token mới khi token cũ hết hạn."
+            "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"PASTE_REFRESH_TOKEN_HERE\"\n}" }
           }
         },
         {
-          "name": "Logout — Đăng xuất",
+          "name": "Logout",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.collectionVariables.set('token', '');",
+            "console.log('Token cleared.');"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/auth/logout",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Đăng xuất tài khoản hiện tại."
+            "url": "{{base_url}}/auth/logout"
           }
         }
       ]
     },
+
     {
-      "name": "03. Mock (không cần auth)",
+      "name": "💬 Chat",
       "item": [
         {
-          "name": "Social Feed — Bài đăng cộng đồng",
+          "name": "Send Chat Message (normal)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has reply', () => pm.expect(r.reply).to.be.a('string'));",
+            "pm.test('Has session_id', () => pm.expect(r.session_id).to.exist);",
+            "console.log('Reply preview:', r.reply?.substring(0, 100));"
+          ], "type": "text/javascript" }}],
           "request": {
-            "method": "GET",
-            "url": "{{base_url}}/posts/mock",
-            "description": "Trả về 5 bài đăng mẫu. Không cần đăng nhập."
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/chat/query",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Tôi muốn nấu cà chua trứng, cần mua nguyên liệu gì?\"\n}" }
           }
         },
         {
-          "name": "Shopping List — Danh sách mua sắm",
+          "name": "Send Chat — Trigger Shopping Intent",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "if (r.shopping_suggestion) {",
+            "  const s = r.shopping_suggestion;",
+            "  console.log('🛒 Shopping intent detected!');",
+            "  console.log('  Store:', s.cart_mandate?.store_name);",
+            "  console.log('  Items:', s.cart_mandate?.items?.length);",
+            "  console.log('  Total:', s.estimated_total, 'k VND');",
+            "  pm.test('Has cart_mandate', () => pm.expect(s.cart_mandate).to.exist);",
+            "} else {",
+            "  console.log('ℹ️ No shopping intent — retry or rephrase the message');",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/chat/query",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Giúp tôi mua 1kg cà chua, 6 quả trứng gà và 1 bó rau cải nhé\"\n}" }
+          }
+        },
+        {
+          "name": "Confirm Purchase (from chat suggestion)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Order confirmed', () => pm.expect(r.status).to.be.oneOf(['paid','confirmed','pending_confirmation']));",
+            "pm.test('Has transaction_id', () => pm.expect(r.transaction_id).to.be.a('string'));",
+            "if (r.order_id) pm.collectionVariables.set('order_id', String(r.order_id));",
+            "console.log('✅ Order:', r.order_id, '| Status:', r.status, '| Txn:', r.transaction_id);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/chat/confirm-purchase",
+            "body": { "mode": "raw", "raw": "{\n  \"cart_mandate\": {\n    \"store_id\": \"bhx\",\n    \"store_name\": \"Bách Hóa Xanh\",\n    \"items\": [\n      {\n        \"product_id\": \"b1\",\n        \"product_name\": \"Cà chua\",\n        \"product_emoji\": \"🍅\",\n        \"unit\": \"kg\",\n        \"quantity\": 1,\n        \"unit_price\": 15.0,\n        \"subtotal\": 15.0\n      },\n      {\n        \"product_id\": \"b9\",\n        \"product_name\": \"Trứng gà\",\n        \"product_emoji\": \"🥚\",\n        \"unit\": \"vỉ 10\",\n        \"quantity\": 1,\n        \"unit_price\": 30.0,\n        \"subtotal\": 30.0\n      }\n    ],\n    \"subtotal\": 45.0,\n    \"delivery_fee\": 15.0,\n    \"estimated_total\": 60.0,\n    \"intent_description\": \"Mua nguyên liệu nấu cà chua trứng\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Chat History",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/shopping-list/mock",
-            "description": "Trả về danh sách mua sắm mẫu (4 nhóm: Rau củ, Thịt, Ngũ cốc, Gia vị). Không cần đăng nhập."
+            "url": "{{base_url}}/chat/history"
           }
         }
       ]
     },
+
     {
-      "name": "04. Personas — Nhân vật AI ✨",
-      "description": "Quản lý AI Persona — mỗi persona thay đổi system prompt, phong cách trả lời, và quick actions.\n\n📦 6 personas hệ thống (is_system=true):\n  🍜 asian_chef       — Đầu bếp Á (mặc định)\n  🥐 european_chef    — Đầu bếp Âu\n  🔬 nutrition_expert — Chuyên gia Dinh dưỡng\n  🌱 vegan_chef       — Đầu bếp Chay\n  🏠 home_chef        — Đầu bếp Gia đình\n  💪 fitness_coach    — Fitness Coach\n\n🛠️ Custom personas (is_system=false):\n  - User/operator có thể tạo thêm persona riêng\n  - Có thể public (mọi user thấy) hoặc private\n  - Hỗ trợ full config: system_prompt, recipe/meal_plan prefix, quick_actions\n\nFlow cơ bản:\n1. List Personas → xem tất cả\n2. Create Custom Persona → tạo mới\n3. Set My Persona → chọn persona (system hoặc custom)\n4. Get My Persona → verify\n5. Test AI endpoints với persona đó",
+      "name": "🍳 Recipes",
       "item": [
         {
-          "name": "List All Personas — Tất cả (system + custom)",
+          "name": "Suggest Recipe — AI (text)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has recipe data', () => pm.expect(r).to.exist);",
+            "console.log('Response keys:', Object.keys(r).join(', '));"
+          ], "type": "text/javascript" }}],
           "request": {
-            "method": "GET",
-            "url": "{{base_url}}/personas",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Trả về:\n  - 6 system personas (is_system=true)\n  - Custom personas public\n  - Custom personas của chính user (dù private)\n\nKhông truyền auth → chỉ trả về 6 system personas + public custom personas.\n\nExpected: 200 OK — array of PersonaListItem"
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/recipes/suggest",
+            "body": { "mode": "raw", "raw": "{\n  \"ingredients\": [\"cà chua\", \"trứng\", \"hành tây\"],\n  \"filters\": [],\n  \"meal_type\": \"lunch\"\n}" }
           }
         },
         {
-          "name": "Get Persona Detail — Chi tiết 1 persona",
+          "name": "Suggest Recipe — Vegetarian filter",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
           "request": {
-            "method": "GET",
-            "url": "{{base_url}}/personas/nutrition_expert",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Chi tiết 1 persona theo ID.\n\nSystem persona IDs:\n  asian_chef, european_chef, nutrition_expert,\n  vegan_chef, home_chef, fitness_coach\n\nCustom persona IDs (dạng): custom_ten-nhan-vat_abc123\n\nOwner nhìn thấy prompts đầy đủ.\nNgười khác không thấy prompts.\n404 nếu ID không tồn tại hoặc không có quyền."
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/recipes/suggest",
+            "body": { "mode": "raw", "raw": "{\n  \"ingredients\": [\"đậu phụ\", \"nấm\", \"cải xanh\"],\n  \"filters\": [\"chay\", \"ít dầu\"],\n  \"meal_type\": \"dinner\"\n}" }
           }
         },
         {
-          "name": "Get My Active Persona — Persona đang dùng",
+          "name": "List Saved Recipes",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+            "const r = pm.response.json();",
+            "if (r.length > 0) pm.collectionVariables.set('recipe_id', String(r[0].id));",
+            "console.log('Total saved recipes:', r.length);"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/personas/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Persona đang active của user hiện tại.\nLần đầu (chưa set) → asian_chef (mặc định).\n\nExpected: 200 OK\n{\n  \"active_persona_id\": \"asian_chef\",\n  \"persona\": { \"id\": \"asian_chef\", \"name\": \"Đầu bếp Á\", ... },\n  \"has_custom_overrides\": false\n}"
-          }
-        },
-        {
-          "name": "Set My Persona — Chọn persona",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (pm.response.code === 200) {",
-                  "  console.log('✅ Persona set to:', json.active_persona_id);",
-                  "}"
-                ]
-              }
+            "url": {
+              "raw": "{{base_url}}/recipes?skip=0&limit=10",
+              "host": ["{{base_url}}"], "path": ["recipes"],
+              "query": [{"key":"skip","value":"0"},{"key":"limit","value":"10"}]
             }
-          ],
-          "request": {
-            "method": "PUT",
-            "url": "{{base_url}}/personas/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"persona_id\": \"nutrition_expert\"\n}"
-            },
-            "description": "Đặt active persona.\npersona_id: ID system persona hoặc custom persona slug.\n\nExpected: 200 OK\n{\n  \"active_persona_id\": \"nutrition_expert\",\n  \"persona\": { ... },\n  \"has_custom_overrides\": false\n}"
           }
         },
         {
-          "name": "Set My Persona — Với custom override",
+          "name": "Get Recipe Detail",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+          ], "type": "text/javascript" }}],
           "request": {
-            "method": "PUT",
-            "url": "{{base_url}}/personas/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"persona_id\": \"home_chef\",\n  \"custom_overrides\": {\n    \"system\": \"Bạn là ChefGPT — người bạn nấu ăn siêu đơn giản. Chỉ nói chuyện thân mật kiểu bạn bè, dùng emoji thoải mái 😄, và luôn ưu tiên công thức nấu trong 15 phút.\",\n    \"recipe_prefix\": \"Gợi ý món cực kỳ đơn giản, tối đa 5 nguyên liệu, nấu xong trong 15 phút.\"\n  }\n}"
-            },
-            "description": "Chọn persona + ghi đè một phần prompt.\n\ncustom_overrides keys:\n  - system          (system prompt)\n  - recipe_prefix\n  - meal_plan_prefix\n\nExpected: 200 OK, has_custom_overrides = true"
+            "method": "GET",
+            "url": "{{base_url}}/recipes/{{recipe_id}}"
           }
         },
         {
-          "name": "Reset Custom Overrides — Về mặc định",
+          "name": "Save Recipe (manual)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json();",
+            "if (r.id) pm.collectionVariables.set('recipe_id', String(r.id));",
+            "console.log('Saved recipe id:', r.id);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/recipes",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Cà chua trứng\",\n  \"description\": \"Món ăn đơn giản, ngon miệng\",\n  \"ingredients\": [\"cà chua\", \"trứng\", \"hành lá\", \"dầu ăn\"],\n  \"steps\": [\"Đập trứng vào bát đánh đều\", \"Xào cà chua với dầu\", \"Thêm trứng vào xào\"],\n  \"nutrition\": { \"calories\": 250, \"protein\": 12, \"carbs\": 8, \"fat\": 18 },\n  \"meal_type\": \"lunch\",\n  \"cooking_time\": 15\n}" }
+          }
+        },
+        {
+          "name": "Delete Recipe",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204 or 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/personas/me/overrides",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Xóa toàn bộ custom_overrides của user.\nGiữ nguyên persona đang chọn, quay về prompt mặc định.\n\nExpected: 204 No Content"
-          }
-        },
-        {
-          "name": "Create Custom Persona — Tạo persona mới",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (pm.response.code === 201 && json.id) {",
-                  "  pm.collectionVariables.set('custom_persona_id', json.id);",
-                  "  console.log('✅ Custom persona created! ID:', json.id);",
-                  "  console.log('   Saved to {{custom_persona_id}} for later use');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/personas",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Đầu bếp Miền Trung\",\n  \"description\": \"Chuyên gia ẩm thực miền Trung Việt Nam — Huế, Đà Nẵng, Hội An\",\n  \"icon\": \"🌶️\",\n  \"color\": \"#EF4444\",\n  \"system_prompt\": \"Bạn là ChefGPT — chuyên gia ẩm thực miền Trung Việt Nam. Bạn hiểu sâu về các món đặc sản Huế (bún bò, bánh khoái, cơm hến), Đà Nẵng (mì Quảng, bánh xèo), và Hội An (cao lầu, cơm gà). Ưu tiên hương vị đậm đà, cay nồng, và kỹ thuật nấu truyền thống miền Trung.\",\n  \"recipe_prefix\": \"Ưu tiên các món đặc sản miền Trung Việt Nam — Huế, Đà Nẵng, Hội An, Quảng Nam. Đặc trưng: cay, mặn, đậm đà, nước chấm phức tạp.\",\n  \"meal_plan_prefix\": \"Tạo thực đơn theo phong cách ẩm thực miền Trung. Cân bằng các món Huế, Đà Nẵng, Hội An. Chú ý khẩu phần vừa phải, ưu tiên nguyên liệu tươi địa phương.\",\n  \"cuisine_filters\": [\"vietnamese\", \"central_vietnamese\"],\n  \"quick_actions\": [\n    \"Công thức bún bò Huế chuẩn vị\",\n    \"Cách làm bánh xèo miền Trung\",\n    \"Mì Quảng ngon nhất Đà Nẵng\"\n  ],\n  \"is_public\": true\n}"
-            },
-            "description": "Tạo custom persona mới.\nID tự động sinh: custom_{name_slug}_{uuid[:6]}\nVD: custom_dau-bep-mien-trung_a1b2c3\n\nID tự động lưu vào {{custom_persona_id}} khi tạo thành công.\n\nFields:\n  name*         — Tên persona (bắt buộc)\n  description   — Mô tả ngắn\n  icon          — Emoji icon\n  color         — Mã màu hex (#RRGGBB)\n  system_prompt — Hướng dẫn hệ thống cho AI\n  recipe_prefix — Prefix prompt gợi ý món\n  meal_plan_prefix — Prefix prompt tạo thực đơn\n  cuisine_filters  — Mảng filter ẩm thực\n  quick_actions    — Tối đa 6 gợi ý nhanh\n  is_public        — Cho phép user khác thấy và dùng\n\nExpected: 201 Created"
-          }
-        },
-        {
-          "name": "Get Custom Persona Detail — Xem persona vừa tạo",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/personas/{{custom_persona_id}}",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Xem chi tiết custom persona vừa tạo.\n{{custom_persona_id}} tự động điền sau bước Create.\n\nOwner nhìn thấy cả prompts block.\nUser khác chỉ thấy metadata."
-          }
-        },
-        {
-          "name": "Set My Persona — Dùng custom persona vừa tạo",
-          "request": {
-            "method": "PUT",
-            "url": "{{base_url}}/personas/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"persona_id\": \"{{custom_persona_id}}\"\n}"
-            },
-            "description": "Chọn custom persona vừa tạo.\nHoạt động giống system persona — inject vào chat/recipes/mealplan."
-          }
-        },
-        {
-          "name": "Update Custom Persona — Chỉnh sửa",
-          "request": {
-            "method": "PUT",
-            "url": "{{base_url}}/personas/{{custom_persona_id}}",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"description\": \"Chuyên gia ẩm thực miền Trung — đặc biệt về món Huế cung đình\",\n  \"system_prompt\": \"Bạn là ChefGPT — chuyên gia ẩm thực Huế cung đình. Bạn am hiểu lịch sử và kỹ thuật của từng món ăn trong mâm cơm Huế hoàng gia...\",\n  \"quick_actions\": [\n    \"Kể về lịch sử bún bò Huế\",\n    \"Cách làm bánh khoái Huế\",\n    \"Mâm cơm Huế hoàng gia gồm những gì?\"\n  ]\n}"
-            },
-            "description": "Cập nhật một phần custom persona (PATCH-like).\nChỉ owner mới update được. System personas bị block (403).\n\nTất cả fields đều optional — chỉ truyền fields muốn thay đổi.\n\nExpected: 200 OK — persona sau khi update"
-          }
-        },
-        {
-          "name": "Delete Custom Persona — Xóa",
-          "request": {
-            "method": "DELETE",
-            "url": "{{base_url}}/personas/{{custom_persona_id}}",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Xóa (soft delete) custom persona.\nChỉ owner mới xóa được. System personas bị block (403).\n\nNếu persona đang là active persona của user nào đó → họ sẽ fallback về default.\n\nExpected: 204 No Content"
+            "url": "{{base_url}}/recipes/{{recipe_id}}"
           }
         }
       ]
     },
+
     {
-      "name": "05. AI — Recipes + Persona (~30-120s)",
-      "description": "Gợi ý món ăn với persona injection.\n\nThêm 'persona_id' để override cho request này.\nKhông truyền → dùng persona user đã set.\n\n⚠️ AI response có thể mất 30–120 giây (Gemini thinking mode).\nPostman: Settings → Request timeout → đặt 180000 ms",
+      "name": "📸 Vision",
       "item": [
         {
-          "name": "Suggest Recipes — Mặc định",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\", \"hành lá\"],\n  \"filters\": [\"ít dầu\"]\n}"
-            },
-            "description": "Dùng persona đang active.\nLần 1: cache MISS (~30-120s).\nLần 2 cùng params + persona: cache HIT (<1s)."
-          }
-        },
-        {
-          "name": "Suggest Recipes — Persona: Đầu bếp Á 🍜",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"thịt bò\", \"sả\", \"gừng\", \"nước mắm\"],\n  \"filters\": [],\n  \"persona_id\": \"asian_chef\"\n}"
-            },
-            "description": "Phong cách Á — ưu tiên món Việt/Nhật/Hàn, kỹ thuật truyền thống, cân bằng 5 vị."
-          }
-        },
-        {
-          "name": "Suggest Recipes — Persona: Đầu bếp Âu 🥐",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"thịt bò\", \"sả\", \"gừng\", \"nước mắm\"],\n  \"filters\": [],\n  \"persona_id\": \"european_chef\"\n}"
-            },
-            "description": "Cùng nguyên liệu với asian_chef — persona Âu gợi ý theo kỹ thuật cổ điển Pháp/Ý.\n\n💡 So sánh 2 responses để thấy sự khác biệt phong cách."
-          }
-        },
-        {
-          "name": "Suggest Recipes — Persona: Đầu bếp Chay 🌱",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"đậu phụ\", \"nấm hương\", \"cải bó xôi\", \"gừng\"],\n  \"filters\": [\"chay\"],\n  \"persona_id\": \"vegan_chef\"\n}"
-            },
-            "description": "Persona thuần chay — không thịt, không trứng, không sữa.\nGiải thích cách thay thế protein thực vật."
-          }
-        },
-        {
-          "name": "Suggest Recipes — Persona: Fitness Coach 💪",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"ức gà\", \"trứng\", \"gạo lứt\", \"bông cải xanh\"],\n  \"filters\": [],\n  \"persona_id\": \"fitness_coach\"\n}"
-            },
-            "description": "Ưu tiên macro cao protein, thông tin dinh dưỡng chính xác, timing ăn quanh tập."
-          }
-        },
-        {
-          "name": "Suggest Recipes — Custom Persona",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"thịt heo\", \"sả\", \"mắm ruốc\"],\n  \"filters\": [],\n  \"persona_id\": \"{{custom_persona_id}}\"\n}"
-            },
-            "description": "Dùng custom persona vừa tạo ở section 04.\n{{custom_persona_id}} tự động điền nếu đã chạy bước Create trước đó."
-          }
-        },
-        {
-          "name": "Recognize Ingredients — Nhận dạng từ ảnh",
+          "name": "Recognize Ingredients from Image",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has ingredients', () => pm.expect(r.ingredients || r).to.exist);",
+            "console.log('Detected:', JSON.stringify(r.ingredients || r));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
             "url": "{{base_url}}/ingredients/recognize",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "body": {
               "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "image",
-                  "type": "file",
-                  "src": "",
-                  "description": "Chọn file ảnh JPG/PNG chứa nguyên liệu"
-                }
-              ]
-            },
-            "description": "Upload ảnh → Gemini Vision nhận dạng nguyên liệu.\nKhông có persona injection (vision endpoint agnostic)."
+              "formdata": [{
+                "key": "file",
+                "type": "file",
+                "src": "",
+                "description": "Upload ảnh (jpg/png) chứa nguyên liệu"
+              }]
+            }
           }
         }
       ]
     },
+
     {
-      "name": "06. AI — Chat + Persona + Memory (~3-10s)",
-      "description": "Chat với AI theo persona.\n\n🧠 Memory System:\n  - Sau mỗi chat, hệ thống tự học facts về user (background task)\n  - Memory được inject vào system_prompt mỗi lần chat\n  - Xem/quản lý memory ở section 09\n\nVí dụ: Chat 'Tôi bị dị ứng tôm' → Memory tự lưu → Lần sau gợi ý không có tôm\n\nThêm 'persona_id' để override persona cho request này.",
+      "name": "📅 Meal Plan",
       "item": [
         {
-          "name": "Chat — Mặc định (dùng persona + memory đã học)",
+          "name": "Generate Meal Plan — Eat Clean",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has plan data', () => pm.expect(r).to.exist);",
+            "console.log('Plan keys:', Object.keys(r).join(', '));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Gợi ý món ăn sáng đơn giản cho người bận rộn\",\n  \"session_id\": null\n}"
-            },
-            "description": "Dùng persona đang active + memory của user.\nsession_id: null = tạo session mới.\n\n📝 Sau khi gửi, background task sẽ extract facts từ tin nhắn này.\nVào section 09 để xem memory đã học được."
+            "url": "{{base_url}}/mealplan/generate",
+            "body": { "mode": "raw", "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 7,\n  \"calories_target\": 1800,\n  \"dietary_preferences\": [],\n  \"allergies\": []\n}" }
           }
         },
         {
-          "name": "Chat — Test Memory: Khai báo dị ứng",
+          "name": "Generate Meal Plan — Weight Loss",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Tôi bị dị ứng hải sản và tôm. Tôi cũng không ăn được thịt đỏ vì vấn đề sức khỏe. Mục tiêu của tôi là giảm 5kg trong 3 tháng.\",\n  \"session_id\": null\n}"
-            },
-            "description": "🧠 Test Memory extraction:\n  AI sẽ trả lời, đồng thời background task extract:\n  - dietary: allergy = hải sản, tôm\n  - aversion: food = thịt đỏ (lý do sức khỏe)\n  - goal: weight_loss = 5kg trong 3 tháng\n\nSau 1-2 giây → check section 09 'Get My Memories' để xem facts đã lưu."
+            "url": "{{base_url}}/mealplan/generate",
+            "body": { "mode": "raw", "raw": "{\n  \"goal\": \"weight_loss\",\n  \"days\": 5,\n  \"calories_target\": 1500,\n  \"dietary_preferences\": [\"ít carb\"],\n  \"allergies\": []\n}" }
           }
         },
         {
-          "name": "Chat — Test Memory: AI nhớ dị ứng",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Gợi ý món hải sản ngon cho tôi đi\",\n  \"session_id\": null\n}"
-            },
-            "description": "⭐ Test Memory injection:\nDù user hỏi về hải sản, AI đã được inject memory 'dị ứng hải sản' vào system_prompt.\nExpected: AI nhắc lại dị ứng và gợi ý món thay thế phù hợp.\n\nNếu Memory hoạt động đúng: AI KHÔNG gợi ý món hải sản/tôm.\nNếu chưa học (chưa chạy bước trước): AI gợi ý bình thường."
-          }
-        },
-        {
-          "name": "Chat — Persona: Đầu bếp Á 🍜",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Cách phân biệt nước mắm ngon và nước mắm kém chất lượng?\",\n  \"session_id\": null,\n  \"persona_id\": \"asian_chef\"\n}"
-            },
-            "description": "AI trả lời theo phong cách đầu bếp châu Á."
-          }
-        },
-        {
-          "name": "Chat — Persona: Chuyên gia Dinh dưỡng 🔬",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Tôi nặng 70kg, muốn giảm 1kg/tuần. Tôi cần ăn bao nhiêu calo mỗi ngày?\",\n  \"session_id\": null,\n  \"persona_id\": \"nutrition_expert\"\n}"
-            },
-            "description": "AI tính TDEE, caloric deficit, macro cụ thể theo phong cách chuyên gia dinh dưỡng.\n\n💡 So sánh với cùng câu hỏi dùng asian_chef để thấy sự khác biệt."
-          }
-        },
-        {
-          "name": "Chat — Persona: Fitness Coach 💪",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Tôi tập gym lúc 6 giờ sáng. Nên ăn gì trước và sau khi tập?\",\n  \"session_id\": null,\n  \"persona_id\": \"fitness_coach\"\n}"
-            },
-            "description": "AI trả lời: pre/post workout nutrition, timing, leucine threshold."
-          }
-        },
-        {
-          "name": "Chat — Persona: Đầu bếp Gia đình 🏠",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Tối nay về muộn, chỉ có trứng và mì gói ở nhà. Nấu gì ngon trong 10 phút?\",\n  \"session_id\": null,\n  \"persona_id\": \"home_chef\"\n}"
-            },
-            "description": "AI trả lời thân mật, thực tế — phong cách đầu bếp gia đình."
-          }
-        },
-        {
-          "name": "Chat History — Lịch sử hội thoại",
+          "name": "List Meal Plans",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Returns array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/chat/history",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Lấy toàn bộ lịch sử chat của user, phân theo session."
+            "url": "{{base_url}}/mealplan"
           }
         }
       ]
     },
+
     {
-      "name": "07. AI — Meal Plan + Persona (~60-120s)",
-      "description": "Tạo thực đơn với persona injection.\n\n⭐ Điểm đặc biệt:\n  - persona_ids: array — cho phép NHIỀU personas cùng lúc (merged)\n  - user_note: text tự do — mô tả sở thích/dị ứng cá nhân\n\n⚠️ Cache logic:\n  - Không có user_note → cache bình thường (TTL 30 phút)\n  - Có user_note → KHÔNG cache (quá cá nhân hóa)\n  - persona_ids được sort trước khi hash → ['A','B'] == ['B','A']",
+      "name": "🧠 Memory",
       "item": [
         {
-          "name": "Generate Meal Plan — Mặc định",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1800\n}"
-            },
-            "description": "Dùng persona đang active.\ngoal options: eat_clean | weight_loss | muscle_gain | keto | maintenance\n\nLần 1: cache MISS (~60-120s). Lần 2 y hệt: cache HIT (<1s)."
-          }
-        },
-        {
-          "name": "Generate Meal Plan — 1 Persona: Dinh dưỡng 🔬",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"weight_loss\",\n  \"days\": 5,\n  \"calories_target\": 1500,\n  \"persona_ids\": [\"nutrition_expert\"]\n}"
-            },
-            "description": "Thực đơn tối ưu macro, chỉ số đường huyết, đa dạng vi chất.\nCache: YES (không có user_note)"
-          }
-        },
-        {
-          "name": "Generate Meal Plan — Multi-persona: Dinh dưỡng + Fitness 🔬💪",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 7,\n  \"calories_target\": 3000,\n  \"persona_ids\": [\"nutrition_expert\", \"fitness_coach\"]\n}"
-            },
-            "description": "⭐ MULTI-PERSONA — kết hợp 2 chuyên gia:\n  - nutrition_expert: macro chính xác, GI, vi chất\n  - fitness_coach: protein timing, pre/post workout\n\nPrompt merge: [Nutrition Expert]: ... + [Fitness Coach]: ...\nCache: YES"
-          }
-        },
-        {
-          "name": "Generate Meal Plan — Với user_note (NO CACHE) 📝",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 7,\n  \"calories_target\": 1800,\n  \"persona_ids\": [\"nutrition_expert\"],\n  \"user_note\": \"Tôi bị dị ứng hải sản và tôm. Tôi thích ăn cơm hơn bánh mì. Ăn chay vào thứ 6 mỗi tuần. Không ăn được đồ cay.\"\n}"
-            },
-            "description": "⭐ USER_NOTE — cá nhân hóa hoàn toàn.\nAI tuân theo: dị ứng, ăn chay thứ 6, không cay...\n\n⚠️ Cache: KHÔNG cache khi có user_note."
-          }
-        },
-        {
-          "name": "Generate Meal Plan — Multi-persona + user_note 🔬💪📝",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 7,\n  \"calories_target\": 2800,\n  \"persona_ids\": [\"fitness_coach\", \"asian_chef\"],\n  \"user_note\": \"Tôi tập gym 5 buổi/tuần, tập lúc 6 giờ sáng. Thích món Việt Nam. Không ăn thịt đỏ.\"\n}"
-            },
-            "description": "Fitness Coach + Asian Chef + user_note cá nhân.\nKhông cache. Result: thực đơn Việt, giàu protein, không thịt đỏ, có pre/post workout meals."
-          }
-        },
-        {
-          "name": "Generate Meal Plan — Keto + Đầu bếp Âu 🥐",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"keto\",\n  \"days\": 5,\n  \"calories_target\": 2000,\n  \"persona_ids\": [\"european_chef\"]\n}"
-            },
-            "description": "Keto theo phong cách Âu — dầu ô liu, phô mai, thịt chất lượng cao. Cache: YES"
-          }
-        },
-        {
-          "name": "Get Saved Plans — Danh sách đã lưu",
+          "name": "Get My Memories",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "const arr = r.memories || r;",
+            "pm.test('Returns array', () => pm.expect(arr).to.be.an('array'));",
+            "if (arr.length > 0) pm.collectionVariables.set('memory_id', String(arr[0].id));",
+            "console.log('Total memories:', arr.length);"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/mealplan",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Danh sách tất cả thực đơn đã tạo và lưu trong DB."
-          }
-        }
-      ]
-    },
-    {
-      "name": "08. Cache Verification — Kiểm tra cache",
-      "description": "Verify cache behavior.\n\nCách test:\n1. Gọi request → xem log backend 'cache=MISS'\n2. Gọi lại y hệt → log 'cache=HIT', latency <50ms\n3. Đổi persona → MISS (cache key thay đổi)\n4. Có user_note → luôn MISS (không cache)",
-      "item": [
-        {
-          "name": "Cache Test: Recipe asian_chef (gọi 2 lần để thấy HIT)",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\"],\n  \"filters\": [],\n  \"persona_id\": \"asian_chef\"\n}"
-            },
-            "description": "Lần 1: cache=MISS, latency 30-120s\nLần 2 (y hệt): cache=HIT, latency <50ms\n\nKiểm tra log backend: 'cache=HIT key_suffix=xxxx'"
+            "url": {
+              "raw": "{{base_url}}/memory/me?skip=0&limit=50",
+              "host": ["{{base_url}}"], "path": ["memory","me"],
+              "query": [{"key":"skip","value":"0"},{"key":"limit","value":"50"}]
+            }
           }
         },
         {
-          "name": "Cache Test: Recipe vegan_chef (cùng nguyên liệu, cache khác)",
+          "name": "Add Memory — Dietary Preference",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json();",
+            "if (r.id) pm.collectionVariables.set('memory_id', String(r.id));",
+            "console.log('Memory saved:', r.key, '=', r.value);"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/recipes/suggest",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"ingredients\": [\"trứng\", \"cà chua\"],\n  \"filters\": [],\n  \"persona_id\": \"vegan_chef\"\n}"
-            },
-            "description": "Cùng nguyên liệu, persona khác → cache entry riêng.\nLần 1: cache=MISS (persona_id=vegan_chef → hash khác asian_chef)"
+            "url": "{{base_url}}/memory/me",
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"dietary_preference\",\n  \"value\": \"Tôi không ăn đồ cay và không ăn hải sản\",\n  \"category\": \"preference\",\n  \"source\": \"manual\",\n  \"confidence\": 1.0\n}" }
           }
         },
         {
-          "name": "Cache Test: MealPlan không user_note (cacheable)",
+          "name": "Add Memory — Health Goal",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1600,\n  \"persona_ids\": [\"nutrition_expert\"]\n}"
-            },
-            "description": "Gọi 2 lần → lần 2 cache HIT.\nLog: 'cache=MISS' rồi 'cache=HIT'"
+            "url": "{{base_url}}/memory/me",
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"health_goal\",\n  \"value\": \"Giảm 5kg trong 3 tháng, ăn ít carb\",\n  \"category\": \"health\",\n  \"source\": \"manual\",\n  \"confidence\": 0.9\n}" }
           }
         },
         {
-          "name": "Cache Test: MealPlan có user_note (KHÔNG cache)",
+          "name": "Add Memory — Allergy",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"eat_clean\",\n  \"days\": 3,\n  \"calories_target\": 1600,\n  \"persona_ids\": [\"nutrition_expert\"],\n  \"user_note\": \"Dị ứng tôm\"\n}"
-            },
-            "description": "Gọi bao nhiêu lần cũng MISS.\nLog: 'cache=SKIP(user_note)'"
+            "url": "{{base_url}}/memory/me",
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"allergy\",\n  \"value\": \"Dị ứng với đậu phộng và sữa bò\",\n  \"category\": \"health\",\n  \"source\": \"manual\",\n  \"confidence\": 1.0\n}" }
           }
         },
         {
-          "name": "Cache Test: persona_ids sort order (A+B == B+A)",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/mealplan/generate",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"goal\": \"muscle_gain\",\n  \"days\": 3,\n  \"calories_target\": 2500,\n  \"persona_ids\": [\"fitness_coach\", \"nutrition_expert\"]\n}"
-            },
-            "description": "Thứ tự đảo ngược so với 'Multi-persona: Dinh dưỡng + Fitness' ở section 07.\nNhưng cả hai đều sort trước khi hash → cùng cache entry → HIT."
-          }
-        }
-      ]
-    },
-    {
-      "name": "09. Memory — Bộ nhớ người dùng 🧠",
-      "description": "Hệ thống Memory tự động học facts về user từ hội thoại.\n\n🔄 Flow hoạt động:\n  1. User chat → AI trả lời\n  2. Background task extract facts từ tin nhắn (Gemini)\n  3. Facts lưu vào DB (user_memories table)\n  4. Lần chat sau: memory được inject vào system_prompt\n  5. AI 'nhớ' thông tin của user qua các sessions\n\n📋 6 Categories:\n  🚫 dietary    — Chế độ ăn (dị ứng, kiêng khem)\n  ✅ preference — Sở thích (loại món, hương vị yêu thích)\n  ❌ aversion   — Không thích (món ghét, hương vị tránh)\n  🎯 goal       — Mục tiêu (giảm cân, tăng cơ, ăn sạch)\n  ⚠️  constraint — Ràng buộc (thời gian, ngân sách, thiết bị)\n  📝 context    — Thông tin khác (gia đình, lịch sinh hoạt)\n\n💡 Test flow:\n  1. Chat khai báo dị ứng ở section 06\n  2. Get My Memories → xem facts vừa học\n  3. Chat lại → AI đã nhớ không cần nhắc lại",
-      "item": [
-        {
-          "name": "Get My Memories — Xem tất cả memory",
+          "name": "Get Memory Categories",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "GET",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Trả về:\n  - memories: danh sách tất cả facts đã học (phân loại theo category)\n  - context_preview: đoạn text được inject vào AI (preview)\n\nExpected: 200 OK\n{\n  \"memories\": [\n    {\n      \"id\": 1,\n      \"category\": \"dietary\",\n      \"key\": \"allergy\",\n      \"value\": \"hải sản và tôm\",\n      \"confidence\": 0.95,\n      \"source\": \"Tôi bị dị ứng hải sản...\"\n    }\n  ],\n  \"context_preview\": \"[Thông tin đã biết về người dùng này]\\n🚫 Chế độ ăn:\\n  • dị ứng: hải sản và tôm\\n...\"\n}"
+            "url": "{{base_url}}/memory/categories"
           }
         },
         {
-          "name": "Get Memory Categories — Metadata categories",
-          "request": {
-            "method": "GET",
-            "url": "{{base_url}}/memory/categories",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Danh sách 6 categories với icon và label.\nDùng để render UI dropdown khi thêm memory thủ công.\n\nExpected: 200 OK\n{\n  \"categories\": [\n    { \"id\": \"dietary\", \"icon\": \"🚫\", \"label\": \"Chế độ ăn\" },\n    { \"id\": \"preference\", \"icon\": \"✅\", \"label\": \"Sở thích\" },\n    ...\n  ]\n}"
-          }
-        },
-        {
-          "name": "Add Memory — Thêm thủ công",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"category\": \"dietary\",\n  \"key\": \"allergy\",\n  \"value\": \"gluten\"\n}"
-            },
-            "description": "Thêm memory thủ công (không qua chat).\nDùng khi user muốn khai báo thông tin không tự động extract được.\n\nCategories: dietary | preference | aversion | goal | constraint | context\n\nExpected: 201 Created — MemoryResponse\n\nLưu ý: Không duplicate (category+key+value phải unique)."
-          }
-        },
-        {
-          "name": "Add Memory — Goal giảm cân",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"category\": \"goal\",\n  \"key\": \"weight_target\",\n  \"value\": \"giảm 5kg trong 3 tháng\"\n}"
-            },
-            "description": "Thêm mục tiêu giảm cân vào memory.\nSau này AI sẽ luôn nhắc đến mục tiêu này khi gợi ý món ăn."
-          }
-        },
-        {
-          "name": "Add Memory — Sở thích món ăn",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"category\": \"preference\",\n  \"key\": \"cuisine\",\n  \"value\": \"thích món Việt Nam truyền thống\"\n}"
-            },
-            "description": "Lưu sở thích ẩm thực Việt Nam."
-          }
-        },
-        {
-          "name": "Add Memory — Ràng buộc thời gian",
-          "request": {
-            "method": "POST",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"category\": \"constraint\",\n  \"key\": \"cooking_time\",\n  \"value\": \"chỉ có 30 phút nấu ăn mỗi bữa\"\n}"
-            },
-            "description": "Lưu ràng buộc thời gian nấu ăn.\nAI sẽ ưu tiên gợi ý các món nấu nhanh."
-          }
-        },
-        {
-          "name": "Delete Memory — Xóa 1 memory",
+          "name": "Delete Memory by ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204 or 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/memory/me/1",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Xóa (soft delete) 1 memory theo ID.\nThay '1' bằng ID thực từ kết quả 'Get My Memories'.\n\nExpected: 204 No Content"
+            "url": "{{base_url}}/memory/me/{{memory_id}}"
           }
         },
         {
-          "name": "Clear All Memories — Xóa toàn bộ",
+          "name": "Delete ALL Memories",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has deleted_count', () => pm.expect(r.deleted_count).to.be.a('number'));",
+            "console.log('Deleted:', r.deleted_count, 'memories');"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "DELETE",
-            "url": "{{base_url}}/memory/me",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
-            "description": "Xóa toàn bộ memory của user (soft delete).\nAI quay về trạng thái 'không biết gì' về user.\n\n⚠️ Không thể hoàn tác.\n\nExpected: 200 OK\n{\n  \"deleted_count\": 5,\n  \"message\": \"Đã xóa 5 memories\"\n}"
+            "url": "{{base_url}}/memory/me"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🤖 Persona",
+      "item": [
+        {
+          "name": "List All Personas",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Returns array', () => pm.expect(r).to.be.an('array'));",
+            "console.log('Personas:', r.map(p => p.id || p.name).join(', '));",
+            "if (r.length > 0) pm.collectionVariables.set('persona_id', r[0].id || r[0].name);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas"
           }
         },
         {
-          "name": "Chat — Verify Memory injection (sau khi add)",
+          "name": "Get Persona Detail",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas/{{persona_id}}"
+          }
+        },
+        {
+          "name": "Get My Active Persona",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+            "if (pm.response.code === 200) console.log('Active:', pm.response.json().persona_id);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/personas/me"
+          }
+        },
+        {
+          "name": "Set Active Persona — Asian Chef",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has persona_id', () => pm.expect(r.persona_id).to.exist);",
+            "console.log('Active persona set to:', r.persona_id);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/personas/me",
+            "body": { "mode": "raw", "raw": "{\n  \"persona_id\": \"asian_chef\",\n  \"overrides\": {}\n}" }
+          }
+        },
+        {
+          "name": "Set Active Persona — Vegan Chef",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/personas/me",
+            "body": { "mode": "raw", "raw": "{\n  \"persona_id\": \"vegan_chef\",\n  \"overrides\": {}\n}" }
+          }
+        },
+        {
+          "name": "Reset Persona Overrides",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/personas/me/overrides"
+          }
+        },
+        {
+          "name": "Create Custom Persona",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json();",
+            "if (r.id) pm.collectionVariables.set('persona_id', String(r.id));",
+            "console.log('Created persona id:', r.id);"
+          ], "type": "text/javascript" }}],
           "request": {
             "method": "POST",
-            "url": "{{base_url}}/chat/query",
-            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"message\": \"Gợi ý thực đơn cho tuần này đi\",\n  \"session_id\": null\n}"
-            },
-            "description": "⭐ Verify Memory hoạt động:\nNếu đã add memories ở trên, AI sẽ:\n  - KHÔNG gợi ý món có gluten/hải sản (dietary allergy)\n  - ƯU TIÊN món Việt Nam (preference: cuisine)\n  - GỢI Ý món nấu nhanh <30 phút (constraint: cooking_time)\n  - NHẮC đến mục tiêu giảm 5kg (goal: weight_target)\n\nContext Preview từ 'Get My Memories' cho thấy chính xác nội dung được inject."
+            "url": "{{base_url}}/personas",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Đầu bếp miền Tây\",\n  \"description\": \"Chuyên gia ẩm thực sông nước Nam Bộ\",\n  \"icon\": \"🐟\",\n  \"system_prompt\": \"Bạn là đầu bếp miền Tây chính gốc. Ưu tiên món sông nước, dân dã. Dùng tiếng Việt mộc mạc, thân thiện.\",\n  \"cuisine_focus\": [\"miền Tây\", \"sông nước\"],\n  \"personality_traits\": [\"thân thiện\", \"bình dị\", \"chân thật\"]\n}" }
+          }
+        },
+        {
+          "name": "Update Custom Persona",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/personas/{{persona_id}}",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Đầu bếp miền Tây (v2)\",\n  \"description\": \"Mô tả cập nhật\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Custom Persona",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204 or 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/personas/{{persona_id}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "💳 AP2 Payments",
+      "item": [
+        {
+          "name": "Get Payment Mandate",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+            "if (pm.response.code === 404) {",
+            "  console.log('ℹ️ No mandate yet — run \"Create/Update Mandate\" first');",
+            "} else {",
+            "  const r = pm.response.json();",
+            "  console.log('Mandate:', r.payment_method, '| Limit:', r.spending_limit, 'k VND');",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/payment-mandate"
+          }
+        },
+        {
+          "name": "Create / Update Payment Mandate",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+            "const r = pm.response.json();",
+            "pm.test('Has spending_limit', () => pm.expect(r.spending_limit).to.be.a('number'));",
+            "console.log('✅ Mandate saved | Method:', r.payment_method, '| Limit:', r.spending_limit, 'k VND');"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/payment-mandate",
+            "body": { "mode": "raw", "raw": "{\n  \"payment_method\": \"cod\",\n  \"spending_limit\": 500.0,\n  \"preferred_store_ids\": [\"bhx\", \"winmart\"],\n  \"auto_buy_enabled\": false\n}" }
+          }
+        },
+        {
+          "name": "Place Agent Order",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has order_id', () => pm.expect(r.order_id).to.be.a('number'));",
+            "pm.test('Has transaction_id', () => pm.expect(r.transaction_id).to.be.a('string'));",
+            "pm.collectionVariables.set('order_id', String(r.order_id));",
+            "console.log('✅ Order placed | ID:', r.order_id, '| Txn:', r.transaction_id, '| Total:', r.total, 'k VND');"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/orders/agent",
+            "body": { "mode": "raw", "raw": "{\n  \"cart_mandate\": {\n    \"store_id\": \"bhx\",\n    \"store_name\": \"Bách Hóa Xanh\",\n    \"items\": [\n      {\n        \"product_id\": \"b1\",\n        \"product_name\": \"Cà chua\",\n        \"product_emoji\": \"🍅\",\n        \"unit\": \"kg\",\n        \"quantity\": 1,\n        \"unit_price\": 15.0,\n        \"subtotal\": 15.0\n      },\n      {\n        \"product_id\": \"b9\",\n        \"product_name\": \"Trứng gà\",\n        \"product_emoji\": \"🥚\",\n        \"unit\": \"vỉ 10\",\n        \"quantity\": 1,\n        \"unit_price\": 30.0,\n        \"subtotal\": 30.0\n      },\n      {\n        \"product_id\": \"b4\",\n        \"product_name\": \"Rau cải xanh\",\n        \"product_emoji\": \"🥬\",\n        \"unit\": \"bó\",\n        \"quantity\": 1,\n        \"unit_price\": 8.0,\n        \"subtotal\": 8.0\n      }\n    ],\n    \"subtotal\": 53.0,\n    \"delivery_fee\": 15.0,\n    \"estimated_total\": 68.0,\n    \"intent_description\": \"Nguyên liệu nấu cà chua trứng\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "Place Agent Order — Over Limit (expect 422)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 422 (over spending limit)', () => pm.response.to.have.status(422));",
+            "console.log('Expected rejection:', pm.response.json().detail);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/orders/agent",
+            "body": { "mode": "raw", "raw": "{\n  \"cart_mandate\": {\n    \"store_id\": \"bigc\",\n    \"store_name\": \"Big C\",\n    \"items\": [\n      {\n        \"product_id\": \"x1\",\n        \"product_name\": \"Giỏ hàng siêu to\",\n        \"product_emoji\": \"🛒\",\n        \"unit\": \"giỏ\",\n        \"quantity\": 1,\n        \"unit_price\": 9999.0,\n        \"subtotal\": 9999.0\n      }\n    ],\n    \"subtotal\": 9999.0,\n    \"delivery_fee\": 25.0,\n    \"estimated_total\": 10024.0,\n    \"intent_description\": \"Test over-limit rejection\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "List Orders",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Returns array', () => pm.expect(r).to.be.an('array'));",
+            "console.log('Total orders:', r.length);",
+            "if (r.length > 0) {",
+            "  pm.collectionVariables.set('order_id', String(r[0].id));",
+            "  r.forEach(o => console.log(' -', o.id, o.store_name, o.status, o.total + 'k'));",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/orders?skip=0&limit=20",
+              "host": ["{{base_url}}"], "path": ["orders"],
+              "query": [{"key":"skip","value":"0"},{"key":"limit","value":"20"}]
+            }
+          }
+        },
+        {
+          "name": "Get Order Detail",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));",
+            "if (pm.response.code === 200) {",
+            "  const r = pm.response.json();",
+            "  pm.test('Has items', () => pm.expect(r.items).to.be.an('array'));",
+            "  pm.test('Has status', () => pm.expect(r.status).to.be.a('string'));",
+            "  console.log('Order', r.id, '| Status:', r.status, '| Items:', r.items.length);",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "Cancel Order (expect 422 if already paid)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 422', () => pm.expect(pm.response.code).to.be.oneOf([200, 422]));",
+            "if (pm.response.code === 422) {",
+            "  console.log('ℹ️ Cannot cancel (already paid):', pm.response.json().detail);",
+            "} else {",
+            "  console.log('✅ Order cancelled successfully');",
+            "}"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/orders/{{order_id}}/cancel"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🌐 Community Recipes (RAG)",
+      "item": [
+        {
+          "name": "Browse — All",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Returns array', () => pm.expect(r).to.be.an('array'));",
+            "console.log('Community recipes:', r.length);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/community-recipes?skip=0&limit=10",
+              "host": ["{{base_url}}"], "path": ["community-recipes"],
+              "query": [{"key":"skip","value":"0"},{"key":"limit","value":"10"}]
+            }
+          }
+        },
+        {
+          "name": "Browse — Filter by Cuisine",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/community-recipes?cuisine=miền Nam&limit=5",
+              "host": ["{{base_url}}"], "path": ["community-recipes"],
+              "query": [{"key":"cuisine","value":"miền Nam"},{"key":"limit","value":"5"}]
+            }
+          }
+        },
+        {
+          "name": "Browse — Filter by Difficulty",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/community-recipes?difficulty=easy&limit=5",
+              "host": ["{{base_url}}"], "path": ["community-recipes"],
+              "query": [{"key":"difficulty","value":"easy"},{"key":"limit","value":"5"}]
+            }
+          }
+        },
+        {
+          "name": "Semantic Search (RAG)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "const results = r.results || r;",
+            "pm.test('Has results', () => pm.expect(results).to.be.an('array'));",
+            "console.log('RAG results:', results.length);",
+            "results.slice(0,3).forEach((x,i) => console.log(i+1+'.', x.name || x.title, '| score:', x.score?.toFixed(3)));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/community-recipes/search?q=món chay healthy ít calo",
+              "host": ["{{base_url}}"], "path": ["community-recipes","search"],
+              "query": [{"key":"q","value":"món chay healthy ít calo"}]
+            }
+          }
+        },
+        {
+          "name": "Semantic Search — Protein Rich",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/community-recipes/search?q=món nhiều đạm tăng cơ",
+              "host": ["{{base_url}}"], "path": ["community-recipes","search"],
+              "query": [{"key":"q","value":"món nhiều đạm tăng cơ"}]
+            }
+          }
+        },
+        {
+          "name": "RAG Index Stats",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has total_recipes', () => pm.expect(r.total_recipes).to.be.a('number'));",
+            "console.log('RAG index:', r.total_recipes, 'recipes | Ready:', r.ready);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/community-recipes/stats"
+          }
+        },
+        {
+          "name": "Get Community Recipe Detail",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 404', () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/community-recipes/1"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "👥 Social (Posts)",
+      "item": [
+        {
+          "name": "Get Mock Feed",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/posts/mock"
+          }
+        },
+        {
+          "name": "List Posts (real)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "const posts = r.posts || r;",
+            "if (Array.isArray(posts) && posts.length > 0) pm.collectionVariables.set('post_id', String(posts[0].id));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/posts?skip=0&limit=10",
+              "host": ["{{base_url}}"], "path": ["posts"],
+              "query": [{"key":"skip","value":"0"},{"key":"limit","value":"10"}]
+            }
+          }
+        },
+        {
+          "name": "Create Post",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "const r = pm.response.json();",
+            "if (r.id) pm.collectionVariables.set('post_id', String(r.id));",
+            "console.log('Post created:', r.id);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/posts",
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hôm nay tôi nấu cà chua trứng ngon lắm! 🍅🥚\",\n  \"image_url\": null,\n  \"recipe_name\": \"Cà chua trứng\"\n}" }
+          }
+        },
+        {
+          "name": "Like Post",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/posts/{{post_id}}/like"
+          }
+        },
+        {
+          "name": "Get Comments",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/posts/{{post_id}}/comments"
+          }
+        },
+        {
+          "name": "Add Comment",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200 or 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/posts/{{post_id}}/comment",
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Trông ngon quá! Cho mình xin công thức với 😍\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Post",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204 or 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/posts/{{post_id}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🛒 Grocery",
+      "item": [
+        {
+          "name": "Get Mock Shopping List",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "const r = pm.response.json();",
+            "pm.test('Has items', () => pm.expect(r.items || r).to.exist);"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/shopping-list/mock"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "🏥 Health",
+      "item": [
+        {
+          "name": "Root Health Check",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/"
+          }
+        },
+        {
+          "name": "OpenAPI Docs",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Docs available', () => pm.response.to.have.status(200));"
+          ], "type": "text/javascript" }}],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{base_url}}/docs"
           }
         }
       ]
     }
+
   ]
 }
