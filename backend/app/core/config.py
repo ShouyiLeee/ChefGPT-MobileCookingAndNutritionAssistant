@@ -81,6 +81,17 @@ class Settings(BaseSettings):
             return [self.gemini_api_key]
         return []
 
+    # MCP — Agentic layer (disabled by default, enable via MCP_ENABLED=true in .env)
+    mcp_enabled: bool = False
+    # Max tool-call iterations per agent turn (safety cap against runaway loops)
+    mcp_max_tool_iterations: int = 5
+    # Seconds allowed for CoordinatorAgent intent classification
+    mcp_intent_timeout: float = 3.0
+    # Seconds allowed per individual tool call
+    mcp_tool_timeout: float = 8.0
+    # Expose MCP HTTP/SSE endpoint at /mcp for external clients (e.g. Claude Desktop)
+    mcp_expose_http_endpoint: bool = False
+
     # Logging
     log_level: str = "INFO"
     log_file: str = "logs/chefgpt.log"

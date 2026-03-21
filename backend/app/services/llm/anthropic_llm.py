@@ -134,6 +134,20 @@ JSON: {{"plan": [{{"day": 1, "meals": {{"breakfast": "...", "lunch": "...", "din
         )
         return response.content[0].text
 
+    async def classify_intent(self, prompt: str) -> str:
+        """Fast structured call for intent classification (temperature=0 for determinism)."""
+        try:
+            response = await self._client.messages.create(
+                model=self._model,
+                max_tokens=512,
+                system="Bạn là hệ thống phân loại ý định. Chỉ trả về JSON, không có text ngoài JSON.",
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text or ""
+        except Exception as e:
+            logger.warning("anthropic classify_intent | error={}", str(e)[:100])
+            return ""
+
     async def extract_memory_facts(self, user_message: str) -> list[dict]:
         from app.services.memory_service import _EXTRACT_PROMPT
         if not user_message or len(user_message.strip()) < 5:

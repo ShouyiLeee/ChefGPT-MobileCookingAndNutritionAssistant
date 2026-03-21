@@ -11,6 +11,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from fastapi import Request
+
+from app.core.config import settings
 from app.core.database import async_session_maker, get_session
 from app.core.security import get_current_user_id
 from app.models.chat import ChatMessage, ChatSession
@@ -69,6 +72,7 @@ async def _extract_memory_bg(user_id: str, user_message: str) -> None:
 async def send_message(
     request: ChatQueryRequest,
     background_tasks: BackgroundTasks,
+    http_request: Request,
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
 ) -> ChatMessageResponse:
@@ -128,87 +132,122 @@ async def send_message(
     # Schedule memory extraction as background task (non-blocking)
     background_tasks.add_task(_extract_memory_bg, user_id, request.message)
 
-    # Call LLM
+    # ── Call LLM — MCP agentic loop OR legacy direct call ──────────────────────
     t_llm = time.perf_counter()
-    try:
-        reply = await llm_provider.chat(request.message, history, persona=persona)
-    except Exception as e:
-        llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
-        logger.error(
-            "router:chat | llm_error={} llm_latency={}ms",
-            str(e)[:200], llm_ms,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"AI service error: {str(e)}",
-        )
-
-    llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
-    logger.debug(
-        "router:chat | llm_ok reply_len={} llm_latency={}ms",
-        len(reply), llm_ms,
-    )
-
-    # Save assistant message
-    assistant_msg = ChatMessage(session_id=chat_session.id, role="model", content=reply)
-    session.add(assistant_msg)
-    await session.commit()
-    await session.refresh(assistant_msg)
-
-    # ── AP2: Detect shopping intent (3s hard cap — never slow down chat) ────────
+    reply: str
     shopping_suggestion: Optional[dict] = None
-    try:
-        intent = await asyncio.wait_for(
-            shopping_agent_service.detect_shopping_intent(request.message),
-            timeout=3.0,
+
+    if settings.mcp_enabled and hasattr(http_request.app.state, "agent_loop"):
+        # ── MCP path: multi-agent agentic loop ─────────────────────────────────
+        from app.agents.base_agent import AgentContext
+        agent_loop = http_request.app.state.agent_loop
+        agent_context = AgentContext(
+            user_id=user_id,
+            persona=persona,
+            history=history,
+            db=session,
+            memory_block=memory_block,
+            session_id=chat_session.id,
         )
-        if intent and intent.has_intent:
-            cart = await shopping_agent_service.build_cart_from_intent(intent)
-            # Check if user has an active mandate
-            mandate_result = await session.execute(
-                select(PaymentMandate).where(
-                    PaymentMandate.user_id == user_id,
-                    PaymentMandate.is_active == True,
-                )
-            )
-            mandate = mandate_result.scalar_one_or_none()
-            suggestion = ShoppingSuggestionSchema(
-                cart_mandate=CartMandateSchema(
-                    store_id=cart.store_id,
-                    store_name=cart.store_name,
-                    items=[
-                        CartMandateItemSchema(
-                            product_id=i.product_id,
-                            product_name=i.product_name,
-                            product_emoji=i.product_emoji,
-                            unit=i.unit,
-                            quantity=i.quantity,
-                            unit_price=i.unit_price,
-                            subtotal=i.subtotal,
-                        )
-                        for i in cart.items
-                    ],
-                    subtotal=cart.subtotal,
-                    delivery_fee=cart.delivery_fee,
-                    estimated_total=cart.estimated_total,
-                    intent_description=cart.intent_description,
-                ),
-                estimated_total=cart.estimated_total,
-                requires_confirmation=True,
-                mandate_id=mandate.id if mandate else None,
-            )
-            shopping_suggestion = suggestion.model_dump()
+        try:
+            loop_result = await agent_loop.run(request.message, agent_context)
+            reply = loop_result.reply
+            shopping_suggestion = loop_result.shopping_suggestion
+            llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
             logger.info(
-                "router:chat | shopping_intent=true store={} items={} total={}k mandate_id={}",
-                cart.store_id, len(cart.items), cart.estimated_total,
-                mandate.id if mandate else None,
+                "router:chat | mcp_ok intent={} agents={} tools={} reply_len={} llm_latency={}ms",
+                loop_result.intent, loop_result.agents_used,
+                loop_result.tool_calls, len(reply), llm_ms,
             )
-        else:
-            logger.debug("router:chat | shopping_intent=false")
-    except asyncio.TimeoutError:
-        logger.warning("router:chat | shopping_intent=timeout — skipping suggestion")
-    except Exception as _e:
-        logger.warning("router:chat | shopping_intent=error reason={}", str(_e)[:100])
+        except Exception as e:
+            llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
+            logger.error("router:chat | mcp_error={} llm_latency={}ms", str(e)[:200], llm_ms)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"AI service error: {str(e)}",
+            )
+
+        # Attach mandate_id to shopping suggestion if user has active mandate
+        if shopping_suggestion:
+            try:
+                mandate_result = await session.execute(
+                    select(PaymentMandate).where(
+                        PaymentMandate.user_id == user_id,
+                        PaymentMandate.is_active == True,
+                    )
+                )
+                mandate = mandate_result.scalar_one_or_none()
+                if mandate and isinstance(shopping_suggestion, dict):
+                    shopping_suggestion["mandate_id"] = mandate.id
+            except Exception:
+                pass
+
+    else:
+        # ── Legacy path: direct LLM call (MCP_ENABLED=false) ───────────────────
+        try:
+            reply = await llm_provider.chat(request.message, history, persona=persona)
+        except Exception as e:
+            llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
+            logger.error("router:chat | llm_error={} llm_latency={}ms", str(e)[:200], llm_ms)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"AI service error: {str(e)}",
+            )
+
+        llm_ms = round((time.perf_counter() - t_llm) * 1000, 1)
+        logger.debug("router:chat | llm_ok reply_len={} llm_latency={}ms", len(reply), llm_ms)
+
+        # AP2: Detect shopping intent (3s hard cap)
+        try:
+            intent = await asyncio.wait_for(
+                shopping_agent_service.detect_shopping_intent(request.message),
+                timeout=3.0,
+            )
+            if intent and intent.has_intent:
+                cart = await shopping_agent_service.build_cart_from_intent(intent)
+                mandate_result = await session.execute(
+                    select(PaymentMandate).where(
+                        PaymentMandate.user_id == user_id,
+                        PaymentMandate.is_active == True,
+                    )
+                )
+                mandate = mandate_result.scalar_one_or_none()
+                suggestion = ShoppingSuggestionSchema(
+                    cart_mandate=CartMandateSchema(
+                        store_id=cart.store_id,
+                        store_name=cart.store_name,
+                        items=[
+                            CartMandateItemSchema(
+                                product_id=i.product_id,
+                                product_name=i.product_name,
+                                product_emoji=i.product_emoji,
+                                unit=i.unit,
+                                quantity=i.quantity,
+                                unit_price=i.unit_price,
+                                subtotal=i.subtotal,
+                            )
+                            for i in cart.items
+                        ],
+                        subtotal=cart.subtotal,
+                        delivery_fee=cart.delivery_fee,
+                        estimated_total=cart.estimated_total,
+                        intent_description=cart.intent_description,
+                    ),
+                    estimated_total=cart.estimated_total,
+                    requires_confirmation=True,
+                    mandate_id=mandate.id if mandate else None,
+                )
+                shopping_suggestion = suggestion.model_dump()
+                logger.info(
+                    "router:chat | shopping_intent=true store={} items={} total={}k",
+                    cart.store_id, len(cart.items), cart.estimated_total,
+                )
+            else:
+                logger.debug("router:chat | shopping_intent=false")
+        except asyncio.TimeoutError:
+            logger.warning("router:chat | shopping_intent=timeout — skipping")
+        except Exception as _e:
+            logger.warning("router:chat | shopping_intent=error reason={}", str(_e)[:100])
 
     total_ms = round((time.perf_counter() - t0) * 1000, 1)
     logger.info(

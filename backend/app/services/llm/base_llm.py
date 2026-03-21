@@ -57,3 +57,13 @@ class BaseLLM(ABC):
         Fast call — must use thinking_budget=0 / equivalent.
         """
         ...
+
+    @abstractmethod
+    async def classify_intent(self, prompt: str) -> str:
+        """
+        Fast structured classification call — used by CoordinatorAgent and agent planning phases.
+        Must use thinking_budget=0 (or equivalent for non-Gemini providers).
+        Returns raw text (JSON string) — caller is responsible for parsing.
+        Latency target: <200ms.
+        """
+        ...

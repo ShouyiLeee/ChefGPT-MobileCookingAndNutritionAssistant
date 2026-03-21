@@ -353,6 +353,22 @@ Trả về JSON (không có text ngoài JSON):
         )
         return reply_text
 
+    async def classify_intent(self, prompt: str) -> str:
+        """
+        Fast structured call for intent classification and agent tool planning.
+        Uses thinking_budget=0 — target latency <200ms.
+        Returns raw text (JSON) — caller parses.
+        """
+        logger.debug("classify_intent | prompt_len={}", len(prompt))
+
+        async def _fn(client, p):
+            return await client.aio.models.generate_content(
+                model=_MODEL, contents=p, config=_NO_THINK
+            )
+
+        response = await self._call(_fn, prompt, operation="classify_intent")
+        return response.text or ""
+
     async def extract_memory_facts(self, user_message: str) -> list[dict]:
         """
         Extract factual food-related memory items from a user message.

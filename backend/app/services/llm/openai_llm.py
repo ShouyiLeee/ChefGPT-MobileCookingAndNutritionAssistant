@@ -126,6 +126,22 @@ JSON: {{"plan": [{{"day": 1, "meals": {{"breakfast": "...", "lunch": "...", "din
         )
         return response.choices[0].message.content
 
+    async def classify_intent(self, prompt: str) -> str:
+        """Fast structured call for intent classification (temperature=0 for determinism)."""
+        try:
+            response = await self._client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": "Bạn là hệ thống phân loại ý định. Chỉ trả về JSON, không có text ngoài JSON."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0,
+            )
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            logger.warning("openai classify_intent | error={}", str(e)[:100])
+            return ""
+
     async def extract_memory_facts(self, user_message: str) -> list[dict]:
         from app.services.memory_service import _EXTRACT_PROMPT
         if not user_message or len(user_message.strip()) < 5:
