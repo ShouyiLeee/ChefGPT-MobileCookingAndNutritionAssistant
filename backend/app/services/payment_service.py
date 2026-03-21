@@ -80,6 +80,19 @@ class PaymentService:
                 f"{mandate.spending_limit:.0f}k VND. Vui lòng điều chỉnh hạn mức trong Ví AI."
             )
 
+        # 1b. Store preference check
+        import json as _json
+        preferred = _json.loads(mandate.preferred_store_ids or "[]")
+        if preferred and cart.store_id not in preferred:
+            logger.warning(
+                "payment:store_not_allowed | user_id={} store={} allowed={}",
+                user_id, cart.store_id, preferred,
+            )
+            raise ValueError(
+                f"Cửa hàng '{cart.store_name}' không nằm trong danh sách được phép "
+                f"trong Ví AI của bạn. Vui lòng cập nhật cài đặt Ví AI."
+            )
+
         # 2. Mock payment gateway
         payment = await self._mock_stripe_charge(
             cart.estimated_total, mandate.payment_method

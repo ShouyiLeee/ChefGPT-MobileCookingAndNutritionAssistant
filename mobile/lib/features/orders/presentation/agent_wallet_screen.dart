@@ -48,7 +48,7 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
   void _applyMandate(PaymentMandateModel m) {
     if (_formLoaded) return;
     setState(() {
-      _spendingLimit = m.spendingLimit.clamp(50.0, 2000.0);
+      _spendingLimit = m.spendingLimit.clamp(50.0, 5000.0);
       _paymentMethod = m.paymentMethod;
       _allowedStores
         ..clear()
@@ -62,6 +62,15 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
   }
 
   Future<void> _save() async {
+    if (_allowedStores.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn ít nhất 1 cửa hàng được phép đặt'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
     final model = PaymentMandateModel(
       id: 0,
       paymentMethod: _paymentMethod,
@@ -163,8 +172,8 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
                 Slider(
                   value: _spendingLimit,
                   min: 50,
-                  max: 2000,
-                  divisions: 39,
+                  max: 5000,
+                  divisions: 99,
                   activeColor: AppColors.primary,
                   label: '${_spendingLimit.toStringAsFixed(0)}k',
                   onChanged: (v) => setState(() => _spendingLimit = v),
@@ -173,7 +182,7 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('50k', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    Text('2,000k', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text('5,000k', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   ],
                 ),
 
@@ -221,6 +230,14 @@ class _AgentWalletScreenState extends ConsumerState<AgentWalletScreen> {
                       activeColor: AppColors.primary,
                       contentPadding: EdgeInsets.zero,
                     ),),
+                if (_allowedStores.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      '⚠️ Chọn ít nhất 1 cửa hàng để tiếp tục',
+                      style: TextStyle(color: AppColors.error, fontSize: 12),
+                    ),
+                  ),
 
                 const SizedBox(height: 24),
 

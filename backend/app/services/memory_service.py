@@ -242,6 +242,40 @@ class MemoryService:
         )
         return mem
 
+    async def update(
+        self,
+        user_id: str,
+        memory_id: int,
+        value: str,
+        db: AsyncSession,
+        cache=None,
+    ) -> Optional[UserMemory]:
+        """Update the value of an existing active memory. Returns None if not found."""
+        result = await db.execute(
+            select(UserMemory).where(
+                UserMemory.id == memory_id,
+                UserMemory.user_id == user_id,
+                UserMemory.is_active == True,
+            )
+        )
+        mem = result.scalar_one_or_none()
+        if not mem:
+            return None
+
+        mem.value = value.strip()[:200]
+        mem.updated_at = datetime.utcnow()
+        await db.commit()
+        await db.refresh(mem)
+
+        if cache:
+            await cache.delete(f"{CACHE_PREFIX}{user_id}")
+
+        logger.info(
+            "memory:updated | user_id={} memory_id={} value={!r}",
+            user_id, memory_id, mem.value[:50],
+        )
+        return mem
+
     async def delete(
         self,
         user_id: str,

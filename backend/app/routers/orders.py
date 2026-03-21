@@ -9,16 +9,17 @@ Routes:
   GET  /orders/{order_id}          — Get order detail with items
   POST /orders/{order_id}/cancel   — Cancel a pending/confirmed order
 """
+import asyncio
 import json
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import func, select
 
-from app.core.database import get_session
+from app.core.database import async_session_maker, get_session
 from app.core.security import get_current_user_id
 from app.models.order import AgentOrder, OrderItem, PaymentMandate
 from app.schemas.order import (
@@ -36,6 +37,38 @@ from app.services.shopping_agent import CartMandate, CartMandateItem
 router = APIRouter(tags=["AP2 Payments"])
 
 _CANCELLABLE_STATUSES = {"pending_confirmation", "confirmed"}
+
+# ── Delivery simulation ───────────────────────────────────────────────────────
+
+async def _simulate_delivery(order_id: int, delay_delivering: float = 5.0, delay_delivered: float = 15.0) -> None:
+    """
+    Background task: simulate order lifecycle transitions.
+    paid → delivering (after ~5s) → delivered (after ~15s more).
+    In production replace with real webhook/push notification.
+    """
+    await asyncio.sleep(delay_delivering)
+    async with async_session_maker() as db:
+        try:
+            order = await db.get(AgentOrder, order_id)
+            if order and order.status == "paid":
+                order.status = "delivering"
+                order.updated_at = datetime.utcnow()
+                await db.commit()
+                logger.info("delivery:delivering | order_id={}", order_id)
+        except Exception as e:
+            logger.warning("delivery:error | order_id={} stage=delivering err={}", order_id, str(e)[:80])
+
+    await asyncio.sleep(delay_delivered)
+    async with async_session_maker() as db:
+        try:
+            order = await db.get(AgentOrder, order_id)
+            if order and order.status == "delivering":
+                order.status = "delivered"
+                order.updated_at = datetime.utcnow()
+                await db.commit()
+                logger.info("delivery:delivered | order_id={}", order_id)
+        except Exception as e:
+            logger.warning("delivery:error | order_id={} stage=delivered err={}", order_id, str(e)[:80])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -191,6 +224,7 @@ async def get_payment_mandate(
 )
 async def place_agent_order(
     body: ConfirmPurchaseRequest,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_session),
 ) -> ConfirmPurchaseResponse:
@@ -254,6 +288,9 @@ async def place_agent_order(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
         )
+
+    # Start delivery simulation in background
+    background_tasks.add_task(_simulate_delivery, result_obj.order_id)
 
     return ConfirmPurchaseResponse(
         order_id=result_obj.order_id,
@@ -335,3 +372,41 @@ async def cancel_order(
 
     logger.info("order:cancelled | user_id={} order_id={}", user_id, order_id)
     return {"success": True, "order_id": order_id, "status": "cancelled"}
+
+
+@router.get("/orders/stats")
+async def get_order_stats(
+    user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Return aggregate spending stats for the current user."""
+    count_result = await session.execute(
+        select(func.count(AgentOrder.id)).where(AgentOrder.user_id == user_id)
+    )
+    total_orders = count_result.scalar_one() or 0
+
+    sum_result = await session.execute(
+        select(func.sum(AgentOrder.total)).where(
+            AgentOrder.user_id == user_id,
+            AgentOrder.status.in_(["paid", "delivering", "delivered"]),
+        )
+    )
+    total_spent = sum_result.scalar_one() or 0.0
+
+    delivered_result = await session.execute(
+        select(func.count(AgentOrder.id)).where(
+            AgentOrder.user_id == user_id,
+            AgentOrder.status == "delivered",
+        )
+    )
+    delivered_count = delivered_result.scalar_one() or 0
+
+    logger.debug(
+        "order:stats | user_id={} total_orders={} total_spent={}k delivered={}",
+        user_id, total_orders, total_spent, delivered_count,
+    )
+    return {
+        "total_orders": total_orders,
+        "total_spent": round(total_spent, 1),
+        "delivered_count": delivered_count,
+    }

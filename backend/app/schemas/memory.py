@@ -38,6 +38,10 @@ class AddMemoryRequest(BaseModel):
     value: str = Field(max_length=200)
 
 
+class UpdateMemoryRequest(BaseModel):
+    value: str = Field(max_length=200, description="New value for the memory entry")
+
+
 class DeleteAllResponse(BaseModel):
     deleted: int
     message: str

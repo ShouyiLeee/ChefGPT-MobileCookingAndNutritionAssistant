@@ -12,6 +12,7 @@ from app.schemas.memory import (
     DeleteAllResponse,
     MemoryListResponse,
     MemoryResponse,
+    UpdateMemoryRequest,
 )
 from app.services.cache import cache_service
 from app.services.memory_service import CATEGORY_CONFIG, memory_service
@@ -82,6 +83,39 @@ async def add_memory(
     logger.info(
         "router:memory:add | user_id={} category={} key={} value={} latency={}ms",
         user_id, request.category, request.key, request.value,
+        round((time.perf_counter() - t0) * 1000, 1),
+    )
+    return MemoryResponse(
+        id=mem.id,
+        category=mem.category,
+        key=mem.key,
+        value=mem.value,
+        confidence=mem.confidence,
+        source=mem.source,
+        created_at=mem.created_at,
+    )
+
+
+@router.put("/me/{memory_id}", response_model=MemoryResponse)
+async def update_memory(
+    memory_id: int,
+    request: UpdateMemoryRequest,
+    user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+) -> MemoryResponse:
+    """Cập nhật giá trị của một memory entry theo ID."""
+    t0 = time.perf_counter()
+    mem = await memory_service.update(
+        user_id, memory_id, request.value, session, cache=cache_service
+    )
+    if not mem:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Memory entry not found",
+        )
+    logger.info(
+        "router:memory:update | user_id={} memory_id={} value={!r} latency={}ms",
+        user_id, memory_id, request.value[:50],
         round((time.perf_counter() - t0) * 1000, 1),
     )
     return MemoryResponse(
