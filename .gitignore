@@ -43,6 +43,9 @@ backend/env/
 *.sqlite
 *.sqlite3
 
+# Auto-generated RAG embeddings cache
+backend/app/mocks/recipe_embeddings.json
+
 # Logs
 *.log
 logs/

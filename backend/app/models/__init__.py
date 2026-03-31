@@ -9,7 +9,6 @@ from app.models.recipe import (
 )
 from app.models.social import Post, Comment, Like, Bookmark
 from app.models.meal_plan import MealPlan, MealItem
-from app.models.shopping import ShoppingList, ShoppingItem
 from app.models.chat import ChatSession, ChatMessage
 from app.models.order import PaymentMandate, AgentOrder, OrderItem
 
@@ -27,8 +26,6 @@ __all__ = [
     "Bookmark",
     "MealPlan",
     "MealItem",
-    "ShoppingList",
-    "ShoppingItem",
     "ChatSession",
     "ChatMessage",
     "PaymentMandate",

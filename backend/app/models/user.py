@@ -22,7 +22,6 @@ class User(SQLModel, table=True):
     recipes: List["Recipe"] = Relationship(back_populates="author")
     posts: List["Post"] = Relationship(back_populates="author")
     meal_plans: List["MealPlan"] = Relationship(back_populates="user")
-    shopping_lists: List["ShoppingList"] = Relationship(back_populates="user")
 
 
 class Profile(SQLModel, table=True):
