@@ -23,8 +23,7 @@ class ChatMessageResponse(BaseModel):
     content: Optional[Dict[str, Any]] = None  # recipe_ids, ingredients, etc.
     is_loading: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class ChatHistoryResponse(BaseModel):

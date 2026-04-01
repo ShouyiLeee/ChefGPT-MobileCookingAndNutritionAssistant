@@ -26,8 +26,7 @@ class MealItemResponse(BaseModel):
     servings: int
     is_completed: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class MealPlanResponse(BaseModel):
@@ -44,5 +43,4 @@ class MealPlanResponse(BaseModel):
     meal_items: List[MealItemResponse] = []
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

@@ -36,8 +36,7 @@ class RecipeStepResponse(RecipeStepBase):
 
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class NutritionInfoResponse(BaseModel):
@@ -51,8 +50,7 @@ class NutritionInfoResponse(BaseModel):
     sugar: Optional[float] = None
     sodium: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class RecipeCreate(BaseModel):
@@ -113,8 +111,7 @@ class RecipeResponse(BaseModel):
     like_count: int = 0
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class RecipeListResponse(BaseModel):
@@ -132,5 +129,4 @@ class RecipeListResponse(BaseModel):
     like_count: int = 0
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}

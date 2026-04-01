@@ -249,6 +249,14 @@ async def send_message(
         except Exception as _e:
             logger.warning("router:chat | shopping_intent=error reason={}", str(_e)[:100])
 
+    # Save assistant reply to database
+    assistant_msg = ChatMessage(
+        session_id=chat_session.id, role="assistant", content=reply
+    )
+    session.add(assistant_msg)
+    await session.commit()
+    await session.refresh(assistant_msg)
+
     total_ms = round((time.perf_counter() - t0) * 1000, 1)
     logger.info(
         "router:chat | ok session_id={} reply_len={} history_turns={} llm_latency={}ms total_latency={}ms",
