@@ -51,9 +51,7 @@ class NutritionMCPServer:
             raise RuntimeError("No Gemini API key configured")
 
         client = genai.Client(api_key=key)
-        config = types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_budget=_NO_THINK_BUDGET)
-        )
+        config = types.GenerateContentConfig()
         response = await client.aio.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,

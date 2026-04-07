@@ -16,12 +16,8 @@ from app.services.llm.base_llm import BaseLLM
 
 _MODEL = "gemini-2.5-flash"
 
-_NO_THINK = types.GenerateContentConfig(
-    thinking_config=types.ThinkingConfig(thinking_budget=0)
-)
-_FAST_THINK = types.GenerateContentConfig(
-    thinking_config=types.ThinkingConfig(thinking_budget=512)
-)
+_NO_THINK = types.GenerateContentConfig()
+_FAST_THINK = types.GenerateContentConfig()
 
 # Default system prompt — used when no persona is selected
 _DEFAULT_SYSTEM_PROMPT = (

@@ -78,13 +78,21 @@ API docs: http://localhost:8000/docs
 ```bash
 cd mobile
 flutter pub get
+
+# Android emulator / thiết bị thật
 flutter run
+
+# Flutter Web — dùng bất kỳ port nào còn trống (CORS backend cho phép mọi port localhost)
+flutter run -d chrome --web-port 3001
+# hoặc để Flutter tự chọn port trống
+flutter run -d chrome --web-port 0
 ```
 
 **Backend URL theo môi trường** (`mobile/lib/core/constants/app_constants.dart`):
 - Android emulator: `http://10.0.2.2:8000`
 - Android thật (cùng WiFi): `http://<IP_PC>:8000`
 - iOS simulator: `http://localhost:8000`
+- Flutter Web: `http://localhost:8000` (CORS cho phép `localhost:3000`)
 
 ## Environment Variables
 

@@ -25,9 +25,7 @@ from loguru import logger
 from app.core.config import settings
 
 _MODEL = "gemini-2.5-flash"
-_NO_THINK = types.GenerateContentConfig(
-    thinking_config=types.ThinkingConfig(thinking_budget=0)
-)
+_NO_THINK = types.GenerateContentConfig()
 
 _PRODUCTS_FILE = Path(__file__).parent.parent / "mocks" / "products.json"
 

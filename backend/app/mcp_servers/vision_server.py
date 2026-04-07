@@ -105,9 +105,7 @@ Trả về JSON (không có markdown):
         try:
             client = genai.Client(api_key=key)
             image_part = types.Part.from_bytes(data=image_bytes, mime_type=image_mime)
-            config = types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0)
-            )
+            config = types.GenerateContentConfig()
             response = await client.aio.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[prompt, image_part],

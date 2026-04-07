@@ -169,9 +169,7 @@ Trả về JSON (không có markdown):
 
         try:
             client = genai.Client(api_key=key)
-            config = types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0)
-            )
+            config = types.GenerateContentConfig()
             response = await client.aio.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
@@ -233,9 +231,7 @@ Trả về JSON (không có markdown):
 
         try:
             client = genai.Client(api_key=key)
-            config = types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0)
-            )
+            config = types.GenerateContentConfig()
             response = await client.aio.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
